@@ -1,0 +1,124 @@
+import { useTranslation } from 'react-i18next'
+import { Clock, ChefHat } from 'lucide-react'
+import PageHero from '@/components/PageHero'
+import AnimatedSection from '@/components/AnimatedSection'
+import SectionHeading from '@/components/SectionHeading'
+import ImageGallery from '@/components/ImageGallery'
+import { menuSections } from '@/data/menu'
+import { getImagesByCategory } from '@/data/gallery'
+import { formatAriary } from '@/utils/helpers'
+import { useLanguage } from '@/hooks/useLanguage'
+
+export default function Restaurant() {
+  const { t } = useTranslation()
+  const { lang } = useLanguage()
+  const restaurantImages = getImagesByCategory('restaurant')
+
+  const specialties = ['specialty1', 'specialty2', 'specialty3', 'specialty4']
+
+  return (
+    <>
+      <PageHero image="/images/restaurant/restaurant-1.jpg" title={t('restaurant.heroTitle')} subtitle={t('restaurant.heroSubtitle')} />
+
+      {/* Section intro */}
+      <AnimatedSection className="container-luxe py-20 md:py-24">
+        <SectionHeading
+          eyebrow={t('restaurant.sectionEyebrow')}
+          title={t('restaurant.sectionTitle')}
+          text={t('restaurant.sectionText')}
+        />
+      </AnimatedSection>
+
+      {/* Warm table + Dishes + Bar (3-column feature) */}
+      <section className="bg-cream py-20 md:py-24">
+        <div className="container-luxe grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { titleKey: 'warmTableTitle', textKey: 'warmTableText', img: '/images/restaurant/restaurant-2.jpg' },
+            { titleKey: 'dishesTitle', textKey: 'dishesText', img: '/images/restaurant/food-1.jpg' },
+            { titleKey: 'barTitle', textKey: 'barText', img: '/images/restaurant/breakfast-1.jpg' },
+          ].map((item, idx) => (
+            <AnimatedSection key={item.titleKey} delay={idx * 0.1} className="bg-white rounded-md overflow-hidden shadow-card">
+              <div className="aspect-[4/3] overflow-hidden">
+                <img src={item.img} alt={t(`restaurant.${item.titleKey}`)} className="w-full h-full object-cover" loading="lazy" />
+              </div>
+              <div className="p-6">
+                <h3 className="font-serif text-lg mb-2">{t(`restaurant.${item.titleKey}`)}</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">{t(`restaurant.${item.textKey}`)}</p>
+              </div>
+            </AnimatedSection>
+          ))}
+        </div>
+      </section>
+
+      {/* Hours + Specialties */}
+      <AnimatedSection className="container-luxe py-20 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-16">
+        <div>
+          <h3 className="font-serif text-2xl mb-6 flex items-center gap-3">
+            <Clock className="text-gold-500" size={24} /> {t('restaurant.hoursTitle')}
+          </h3>
+          <div className="space-y-4">
+            {[
+              ['breakfast', 'breakfastHours'],
+              ['lunch', 'lunchHours'],
+              ['dinner', 'dinnerHours'],
+            ].map(([label, hours]) => (
+              <div key={label} className="flex justify-between border-b border-gray-100 pb-3">
+                <span className="font-medium text-charcoal">{t(`restaurant.${label}`)}</span>
+                <span className="text-gray-600">{t(`restaurant.${hours}`)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3 className="font-serif text-2xl mb-6 flex items-center gap-3">
+            <ChefHat className="text-gold-500" size={24} /> {t('restaurant.specialtiesTitle')}
+          </h3>
+          <ul className="space-y-3">
+            {specialties.map((key) => (
+              <li key={key} className="flex items-center gap-3 text-gray-700">
+                <span className="w-1.5 h-1.5 rounded-full bg-gold-500 shrink-0" />
+                {t(`restaurant.${key}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </AnimatedSection>
+
+      {/* Menu */}
+      <section className="bg-cream py-20 md:py-24">
+        <div className="container-luxe">
+          <SectionHeading title={t('restaurant.menuTitle')} text={t('restaurant.menuText')} />
+
+          <div className="mt-14 max-w-4xl mx-auto space-y-12">
+            {menuSections.map((section) => (
+              <div key={section.id}>
+                <h3 className="font-serif text-2xl text-gold-600 mb-6 text-center">
+                  {lang === 'en' ? section.titleEn : section.title}
+                </h3>
+                <div className="space-y-4">
+                  {section.items.map((item) => (
+                    <div key={item.id} className="flex justify-between gap-4 border-b border-gray-200 pb-3">
+                      <div>
+                        <div className="font-medium text-charcoal">{lang === 'en' ? item.nameEn : item.name}</div>
+                        <div className="text-sm text-gray-500">{lang === 'en' ? item.descriptionEn : item.description}</div>
+                      </div>
+                      <div className="text-gold-600 font-serif whitespace-nowrap">{formatAriary(item.price)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery + CTA */}
+      <AnimatedSection className="container-luxe py-20 md:py-24">
+        <SectionHeading title={t('restaurant.ctaTitle')} />
+        <div className="mt-14">
+          <ImageGallery images={restaurantImages} columns={4} />
+        </div>
+      </AnimatedSection>
+    </>
+  )
+}
