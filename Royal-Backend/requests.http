@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:3001
+
+### Health
+GET {{baseUrl}}/health
+
+### Room catalogue
+GET {{baseUrl}}/api/room-types
+
+### Availability
+GET {{baseUrl}}/api/availability?checkIn=2030-06-10&checkOut=2030-06-13&rooms=1&adults=2&children=0
+
+### Create a pending booking
+POST {{baseUrl}}/api/bookings
+Content-Type: application/json
+
+{
+  "checkIn": "2030-06-10",
+  "checkOut": "2030-06-13",
+  "adults": 2,
+  "children": 0,
+  "guestName": "Marie Rakoto",
+  "guestEmail": "marie@example.com",
+  "guestPhone": "+261 34 00 000 00",
+  "rooms": [{ "roomTypeId": "classic", "quantity": 1 }]
+}
+
+### Contact inquiry
+POST {{baseUrl}}/api/contact
+Content-Type: application/json
+
+{
+  "name": "Marie Rakoto",
+  "email": "marie@example.com",
+  "phone": "+261 34 00 000 00",
+  "subject": "Stay enquiry",
+  "message": "I would like more information about my stay."
+}
+
+### Event inquiry
+POST {{baseUrl}}/api/event-inquiries
+Content-Type: application/json
+
+{
+  "name": "Marie Rakoto",
+  "email": "marie@example.com",
+  "eventDate": "2030-07-15",
+  "guestCount": 80,
+  "message": "Please send a proposal for a conference."
+}
