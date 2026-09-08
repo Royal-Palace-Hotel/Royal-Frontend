@@ -19,9 +19,11 @@ export default function Hero() {
   const { t } = useTranslation()
 
   return (
-    <section className="relative h-screen min-h-[640px] w-full overflow-hidden">
-      {/* Background image */}
-      <div className="absolute inset-0">
+    // Hauteur du bloc hero réduite (h-[75vh] au lieu de h-[85vh]) pour remonter
+    // la ligne de séparation avec le bloc du bas, sans toucher à son contenu.
+    <section className="relative h-[75vh] min-h-[560px] w-full">
+      {/* Background image — seul ce conteneur est clipé */}
+      <div className="absolute inset-0 overflow-hidden">
         <img
           src="/images/hero/hero-building.jpg"
           alt="Royal Palace Antsirabe — façade de l'hôtel au crépuscule"
@@ -53,17 +55,30 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* Floating booking bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.9, delay: 0.4, ease: 'easeOut' }}
-        className="absolute bottom-0 left-0 right-0 translate-y-1/2 z-20 px-4 md:px-0"
-      >
-        <div className="container-luxe">
-          <BookingBar floating />
-        </div>
-      </motion.div>
+      {/*
+        Floating booking bar — au premier plan, devant la ligne de séparation.
+
+        STRUCTURE EN 2 COUCHES (important, ne pas fusionner) :
+        - Couche EXTERNE (ce <div> classique) : gère TOUTE la position/le décalage
+          via className. N'est jamais touché par Framer Motion.
+        - Couche INTERNE (le motion.div) : gère UNIQUEMENT l'animation d'entrée
+          (fondu + léger glissement). Son propre transform ne peut donc plus
+          jamais entrer en conflit avec le positionnement.
+
+        Pour ajuster la descente du bloc : change uniquement la valeur "1.5cm"
+        ci-dessous (ex: "5cm", "3rem", "40px"...). Rien d'autre à toucher.
+      */}
+      <div className="absolute bottom-0 left-0 right-0 translate-y-[calc(50%-0.2cm)] z-30 px-4 md:px-0">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.4, ease: 'easeOut' }}
+        >
+          <div className="container-luxe">
+            <BookingBar floating />
+          </div>
+        </motion.div>
+      </div>
     </section>
   )
 }
