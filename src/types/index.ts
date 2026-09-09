@@ -12,6 +12,8 @@ export interface Room {
   size: number // in m²
   maxGuests: number
   amenities: string[] // icon keys, see RoomCard
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface GalleryImage {
@@ -28,6 +30,7 @@ export interface MenuItem {
   description: string
   descriptionEn: string
   price: number
+  order?: number
 }
 
 export interface MenuSection {
@@ -35,6 +38,7 @@ export interface MenuSection {
   title: string
   titleEn: string
   items: MenuItem[]
+  order?: number
 }
 
 export interface SpaTreatment {
@@ -42,12 +46,14 @@ export interface SpaTreatment {
   key: string // i18n key suffix e.g. 'treatment1'
   durationKey: string
   price: number
+  order?: number
 }
 
 export interface EventRoom {
   id: string
   key: string
   image: string
+  order?: number
 }
 
 export interface BookingState {

@@ -49,14 +49,14 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
       <div
         className={classNames(
           // Bordures pointues (rounded-none) et largeur réduite
-          'bg-white flex flex-col md:flex-row items-stretch w-full max-w-5xl overflow-hidden rounded-none',
+          'bg-white flex flex-col md:flex-row items-stretch w-full max-w-5xl rounded-none',
           floating
             ? 'shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_25px_60px_-8px_rgba(0,0,0,0.45),0_-6px_25px_-10px_rgba(0,0,0,0.2)]'
             : 'shadow-card'
         )}
       >
         {/* Groupe Arrivée / Départ / Chambres & voyageurs, avec traits fins entre chaque bloc */}
-        <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200">
+        <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200 relative overflow-visible">
           {/* Check-in */}
           <label className="group flex-1 flex items-center gap-3 px-6 py-5 cursor-pointer transition-colors duration-200 hover:bg-cream/60 focus-within:bg-cream/70">
             <Calendar size={18} className="text-gold-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />
@@ -90,10 +90,13 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
           </label>
 
           {/* Rooms & guests */}
-          <div ref={guestsRef} className="flex-1 relative">
+          <div ref={guestsRef} className="flex-1 relative z-10">
             <button
               type="button"
-              onClick={() => setGuestsOpen((v) => !v)}
+              onClick={() => {
+                console.log('Button clicked, current state:', guestsOpen);
+                setGuestsOpen((v) => !v);
+              }}
               className="group w-full flex items-center gap-3 px-6 py-5 text-left transition-colors duration-200 hover:bg-cream/60"
             >
               <Users size={18} className="text-gold-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />
@@ -105,7 +108,7 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
             </button>
 
             {guestsOpen && (
-              <div className="absolute top-full left-0 mt-3 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rounded-none p-5 w-72 z-50 animate-fade-in">
+              <div className="absolute top-full left-0 mt-3 bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] rounded-none p-5 w-72 z-[9999] animate-fade-in">
                 <Stepper label={t('common.rooms')} value={state.rooms} onChange={setRooms} min={1} />
                 <Stepper label={t('common.adults')} value={state.adults} onChange={setAdults} min={1} />
                 <Stepper label={t('common.children')} value={state.children} onChange={setChildren} min={0} />
@@ -127,7 +130,7 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
         <div className="flex items-center justify-center p-3 md:p-4">
           <button
             type="button"
-            onClick={submitSearch}
+            onClick={() => submitSearch()}
             className="w-full md:w-auto bg-gold-500 hover:bg-gold-600 active:bg-gold-700 text-white uppercase tracking-widest2 text-[10px] md:text-[11px] font-semibold px-2 md:px-3 py-3.5 rounded-none transition-all duration-200 whitespace-nowrap hover:shadow-lg"
           >
             {t('common.checkAvailability')}
