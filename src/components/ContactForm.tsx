@@ -3,16 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 import type { ContactFormData } from '@/types'
 import { validateEmail, validatePhone } from '@/utils/helpers'
+import { api } from '@/utils/api'
 
 type Status = 'idle' | 'sending' | 'success' | 'error'
 
 /**
  * ContactForm
  * -----------
- * Fully client-validated contact form. On submit, currently logs the
- * payload to the console and simulates a network delay (API-READY —
- * replace `fakeSubmit` with a real fetch() call to your backend or
- * a service like Formspree/EmailJS when available).
+ * Fully client-validated contact form. On submit, sends data to the backend API.
  */
 export default function ContactForm() {
   const { t } = useTranslation()
@@ -40,20 +38,18 @@ export default function ContactForm() {
     return Object.keys(next).length === 0
   }
 
-  async function fakeSubmit(data: ContactFormData): Promise<void> {
-    // eslint-disable-next-line no-console
-    console.log('[Royal Palace] Contact form submitted:', data)
-    await new Promise((resolve) => setTimeout(resolve, 900))
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
     setStatus('sending')
     try {
-      await fakeSubmit(form)
-      setStatus('success')
-      setForm({ name: '', email: '', phone: '', subject: '', message: '' })
+      const result = await api.sendContact(form)
+      if (result.error) {
+        setStatus('error')
+      } else {
+        setStatus('success')
+        setForm({ name: '', email: '', phone: '', subject: '', message: '' })
+      }
     } catch {
       setStatus('error')
     }

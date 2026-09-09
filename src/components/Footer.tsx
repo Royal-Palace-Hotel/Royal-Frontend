@@ -2,18 +2,26 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Facebook, Instagram, MapPin, Phone, Mail } from 'lucide-react'
 import { useState } from 'react'
+import { api } from '@/utils/api'
 
 export default function Footer() {
   const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [subscribed, setSubscribed] = useState(false)
+  const [subscribing, setSubscribing] = useState(false)
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault()
-    // eslint-disable-next-line no-console
-    console.log('[Royal Palace] Newsletter signup:', email)
-    setSubscribed(true)
-    setEmail('')
+    setSubscribing(true)
+    try {
+      await api.subscribeNewsletter(email)
+      setSubscribed(true)
+      setEmail('')
+    } catch {
+      console.error('[Royal Palace] Newsletter signup failed')
+    } finally {
+      setSubscribing(false)
+    }
   }
 
   return (
@@ -81,8 +89,8 @@ export default function Footer() {
                 placeholder={t('footer.newsletterPlaceholder')}
                 className="bg-white/10 border border-white/20 text-sm px-4 py-2.5 w-full focus:outline-none focus:border-gold-500 placeholder:text-white/40"
               />
-              <button type="submit" className="bg-gold-500 hover:bg-gold-600 px-4 text-white transition-colors" aria-label="Subscribe">
-                →
+              <button type="submit" disabled={subscribing} className="bg-gold-500 hover:bg-gold-600 px-4 text-white transition-colors disabled:opacity-60" aria-label="Subscribe">
+                {subscribing ? '...' : '→'}
               </button>
             </form>
           )}

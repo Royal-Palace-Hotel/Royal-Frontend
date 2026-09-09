@@ -1,16 +1,20 @@
 import { useTranslation } from 'react-i18next'
 import { Users, CheckCircle2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PageHero from '@/components/PageHero'
 import AnimatedSection from '@/components/AnimatedSection'
 import SectionHeading from '@/components/SectionHeading'
-import { eventRooms, equipmentKeys } from '@/data/events'
-import type { EventFormData } from '@/types'
+import { equipmentKeys } from '@/data/events'
+import type { EventFormData, EventRoom } from '@/types'
 import { validateEmail } from '@/utils/helpers'
+import { api } from '@/utils/api'
 
 export default function Events() {
   const { t } = useTranslation()
   const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle')
+  const [eventRooms, setEventRooms] = useState<EventRoom[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<EventFormData>({
     name: '',
     email: '',
@@ -21,6 +25,43 @@ export default function Events() {
     guestCount: '',
   })
 
+  useEffect(() => {
+    async function fetchEventRooms() {
+      const response = await api.getEvents()
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        setEventRooms(response.data)
+      }
+      setLoading(false)
+    }
+    fetchEventRooms()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading event rooms...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load event rooms: {error}</p>
+          <button onClick={() => window.location.reload()} className="btn-gold">
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   function update<K extends keyof EventFormData>(key: K, value: string) {
     setForm((p) => ({ ...p, [key]: value }))
   }
@@ -29,10 +70,17 @@ export default function Events() {
     e.preventDefault()
     if (!form.name || !validateEmail(form.email) || !form.message) return
     setStatus('sending')
-    // eslint-disable-next-line no-console
-    console.log('[Royal Palace] Event inquiry submitted:', form)
-    await new Promise((r) => setTimeout(r, 800))
-    setStatus('success')
+    try {
+      const result = await api.sendEventInquiry(form)
+      if (result.error) {
+        console.error('[Royal Palace] Event inquiry failed:', result.error)
+        setStatus('idle')
+      } else {
+        setStatus('success')
+      }
+    } catch {
+      setStatus('idle')
+    }
   }
 
   const inputClass =
@@ -51,7 +99,7 @@ export default function Events() {
         <div className="container-luxe">
           <SectionHeading title={t('events.roomsTitle')} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-14">
-            {eventRooms.map((room, idx) => (
+            {eventRooms.length > 0 ? eventRooms.map((room, idx) => (
               <AnimatedSection key={room.id} delay={idx * 0.1} className="bg-white rounded-md overflow-hidden shadow-card">
                 <div className="aspect-[4/3] overflow-hidden">
                   <img src={room.image} alt={t(`events.${room.key}Name`)} className="w-full h-full object-cover" loading="lazy" />
@@ -64,7 +112,9 @@ export default function Events() {
                   <p className="text-sm text-gray-600">{t(`events.${room.key}Style`)}</p>
                 </div>
               </AnimatedSection>
-            ))}
+            )) : (
+              <p className="text-center text-gray-600 col-span-3">Event rooms not available at the moment.</p>
+            )}
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getTomorrow, getDefaultCheckout, toInputDate, fromInputDate } from '@/utils/dateHelpers'
 import type { BookingState } from '@/types'
+import { api } from '@/utils/api'
 
 /**
  * useBooking
@@ -9,11 +10,7 @@ import type { BookingState } from '@/types'
  * Manages the state of the floating booking bar (check-in/out dates,
  * rooms & guests) and exposes a `submitSearch` action.
  *
- * API-READY: `submitSearch` currently navigates to /contact with the
- * booking query params, and logs the payload to the console. Replace
- * the body of `submitSearch` with a real API call (e.g. fetch to your
- * PMS / channel manager) when ready — the data shape is already
- * structured for that purpose.
+ * API integration: Checks availability and navigates to rooms page with params.
  */
 export function useBooking() {
   const navigate = useNavigate()
@@ -41,28 +38,35 @@ export function useBooking() {
     setState((prev) => ({ ...prev, checkOut: fromInputDate(value) }))
   }, [])
 
-  const setRooms = useCallback((rooms: number) => {
+  const setRooms = (rooms: number) => {
     setState((prev) => ({ ...prev, rooms: Math.max(1, rooms) }))
-  }, [])
+  }
 
-  const setAdults = useCallback((adults: number) => {
+  const setAdults = (adults: number) => {
     setState((prev) => ({ ...prev, adults: Math.max(1, adults) }))
-  }, [])
+  }
 
-  const setChildren = useCallback((children: number) => {
+  const setChildren = (children: number) => {
     setState((prev) => ({ ...prev, children: Math.max(0, children) }))
-  }, [])
+  }
 
-  const submitSearch = useCallback(() => {
+  const submitSearch = useCallback(async (roomId?: string) => {
     const payload = {
       checkIn: toInputDate(state.checkIn),
       checkOut: toInputDate(state.checkOut),
       rooms: state.rooms,
       adults: state.adults,
       children: state.children,
+      ...(roomId && { roomId }),
     }
-    // eslint-disable-next-line no-console
-    console.log('[Royal Palace] Booking search submitted:', payload)
+
+    // Check availability via API
+    const result = await api.checkAvailability(payload)
+
+    if (result.error) {
+      console.error('[Royal Palace] Availability check failed:', result.error)
+      // Still navigate to rooms page even if availability check fails
+    }
 
     const params = new URLSearchParams(payload as unknown as Record<string, string>)
     navigate(`/chambres-suites?${params.toString()}`)
