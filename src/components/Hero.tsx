@@ -64,9 +64,6 @@ export default function Hero() {
         - Couche INTERNE (le motion.div) : gère UNIQUEMENT l'animation d'entrée
           (fondu + léger glissement). Son propre transform ne peut donc plus
           jamais entrer en conflit avec le positionnement.
-
-        Pour ajuster la descente du bloc : change uniquement la valeur "1.5cm"
-        ci-dessous (ex: "5cm", "3rem", "40px"...). Rien d'autre à toucher.
       */}
       <div className="absolute bottom-0 left-0 right-0 translate-y-[calc(50%-0.2cm)] z-30 px-4 md:px-0">
         <motion.div
