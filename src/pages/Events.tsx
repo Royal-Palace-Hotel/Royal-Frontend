@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Users, CheckCircle2 } from 'lucide-react'
+import { Users, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import PageHero from '@/components/PageHero'
 import AnimatedSection from '@/components/AnimatedSection'
@@ -15,6 +15,7 @@ export default function Events() {
   const [eventRooms, setEventRooms] = useState<EventRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [form, setForm] = useState<EventFormData>({
     name: '',
     email: '',
@@ -64,21 +65,52 @@ export default function Events() {
 
   function update<K extends keyof EventFormData>(key: K, value: string) {
     setForm((p) => ({ ...p, [key]: value }))
+    if (submitError) setSubmitError(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.name || !validateEmail(form.email) || !form.message) return
+    setSubmitError(null)
+
+    // Validation côté client
+    if (!form.name.trim()) {
+      setSubmitError('Veuillez saisir votre nom.')
+      return
+    }
+    if (!validateEmail(form.email)) {
+      setSubmitError('Veuillez saisir une adresse email valide.')
+      return
+    }
+    if (!form.eventDate) {
+      setSubmitError("Veuillez choisir la date de l'événement.")
+      return
+    }
+    if (!form.guestCount || Number(form.guestCount) < 1) {
+      setSubmitError("Veuillez indiquer le nombre de personnes.")
+      return
+    }
+    if (!form.message.trim()) {
+      setSubmitError('Veuillez décrire votre projet.')
+      return
+    }
+
     setStatus('sending')
     try {
       const result = await api.sendEventInquiry(form)
       if (result.error) {
         console.error('[Royal Palace] Event inquiry failed:', result.error)
+        setSubmitError(
+          typeof result.error === 'string' && result.error !== 'Network error'
+            ? `L'envoi a échoué : ${result.error}`
+            : "L'envoi a échoué. Vérifiez votre connexion et réessayez."
+        )
         setStatus('idle')
       } else {
         setStatus('success')
       }
-    } catch {
+    } catch (err) {
+      console.error('[Royal Palace] Event inquiry exception:', err)
+      setSubmitError('Impossible de contacter le serveur. Veuillez réessayer plus tard.')
       setStatus('idle')
     }
   }
@@ -142,16 +174,71 @@ export default function Events() {
               {t('contact.successMessage')}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="mt-10 space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="mt-10 space-y-5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <input required placeholder={t('contact.namePlaceholder')} value={form.name} onChange={(e) => update('name', e.target.value)} className={inputClass} />
-                <input required type="email" placeholder={t('contact.emailPlaceholder')} value={form.email} onChange={(e) => update('email', e.target.value)} className={inputClass} />
+                <input
+                  required
+                  placeholder={t('contact.namePlaceholder')}
+                  value={form.name}
+                  onChange={(e) => update('name', e.target.value)}
+                  className={inputClass}
+                />
+                <input
+                  required
+                  type="email"
+                  placeholder={t('contact.emailPlaceholder')}
+                  value={form.email}
+                  onChange={(e) => update('email', e.target.value)}
+                  className={inputClass}
+                />
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <input type="date" value={form.eventDate} onChange={(e) => update('eventDate', e.target.value)} className={inputClass} />
-                <input type="number" min={1} placeholder="Nombre de personnes" value={form.guestCount} onChange={(e) => update('guestCount', e.target.value)} className={inputClass} />
+                <input
+                  type="tel"
+                  placeholder="Téléphone"
+                  value={form.phone}
+                  onChange={(e) => update('phone', e.target.value)}
+                  className={inputClass}
+                />
+                <input
+                  required
+                  type="number"
+                  min={1}
+                  placeholder="Nombre de personnes"
+                  value={form.guestCount}
+                  onChange={(e) => update('guestCount', e.target.value)}
+                  className={inputClass}
+                />
               </div>
-              <textarea required rows={4} placeholder={t('contact.messagePlaceholder')} value={form.message} onChange={(e) => update('message', e.target.value)} className={inputClass} />
+
+              <input
+                required
+                type="date"
+                value={form.eventDate}
+                onChange={(e) => update('eventDate', e.target.value)}
+                className={inputClass}
+              />
+
+              <textarea
+                required
+                rows={4}
+                placeholder={t('contact.messagePlaceholder')}
+                value={form.message}
+                onChange={(e) => update('message', e.target.value)}
+                className={inputClass}
+              />
+
+              {submitError && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-2 text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-4 py-3"
+                >
+                  <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                  <span>{submitError}</span>
+                </div>
+              )}
+
               <button type="submit" disabled={status === 'sending'} className="btn-gold disabled:opacity-60">
                 {status === 'sending' ? t('common.sending') : t('common.send')}
               </button>
