@@ -1,3 +1,8 @@
+import rooms from '@/data/rooms'
+import { menuSections } from '@/data/menu'
+import spaTreatments from '@/data/spa'
+import eventRooms from '@/data/events'
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
 interface ApiResponse<T> {
@@ -13,11 +18,11 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
-      ...options,
     })
 
     const data = await response.json()
@@ -32,12 +37,29 @@ async function request<T>(
   }
 }
 
+/**
+ * Pour les pages de contenu (chambres, menu, spa, événements) :
+ * si l'API est injoignable ou renvoie une erreur, on utilise les
+ * données locales de src/data/ afin que la page s'affiche quand même.
+ * Dès que le backend répond, ce sont ses données qui sont utilisées.
+ */
+async function withFallback<T>(
+  call: () => Promise<ApiResponse<T>>,
+  fallback: T
+): Promise<ApiResponse<T>> {
+  const response = await call()
+  if (response.error || !response.data) {
+    return { data: fallback }
+  }
+  return response
+}
+
 export const api = {
-  // Content
-  getRooms: () => request<any[]>('/content/rooms'),
-  getMenu: () => request<any[]>('/content/menu'),
-  getSpa: () => request<any[]>('/content/spa'),
-  getEvents: () => request<any[]>('/content/events'),
+  // Content (avec repli sur les données locales)
+  getRooms: () => withFallback(() => request<any[]>('/content/rooms'), rooms as any[]),
+  getMenu: () => withFallback(() => request<any[]>('/content/menu'), menuSections as any[]),
+  getSpa: () => withFallback(() => request<any[]>('/content/spa'), spaTreatments as any[]),
+  getEvents: () => withFallback(() => request<any[]>('/content/events'), eventRooms as any[]),
 
   // Bookings
   checkAvailability: (data: {

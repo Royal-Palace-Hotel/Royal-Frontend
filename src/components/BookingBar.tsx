@@ -21,6 +21,8 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
   const { state, setCheckIn, setCheckOut, setRooms, setAdults, setChildren, submitSearch } = useBooking()
   const [guestsOpen, setGuestsOpen] = useState(false)
   const guestsRef = useRef<HTMLDivElement>(null)
+  const checkInRef = useRef<HTMLInputElement>(null)
+  const checkOutRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -38,6 +40,20 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
 
   // Classe partagée pour masquer l'icône native du navigateur sur les inputs date,
   // tout en gardant toute la zone cliquable (ouvre le picker au clic n'importe où).
+  function openDatePicker(ref: React.RefObject<HTMLInputElement>) {
+    const el = ref.current
+    if (!el) return
+    if (typeof el.showPicker === 'function') {
+      try {
+        el.showPicker()
+      } catch {
+        el.focus()
+      }
+    } else {
+      el.focus()
+    }
+  }
+
   const dateInputClass =
     'relative text-sm font-medium text-charcoal w-full focus:outline-none bg-transparent ' +
     '[&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 ' +
@@ -58,15 +74,20 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
         {/* Groupe Arrivée / Départ / Chambres & voyageurs, avec traits fins entre chaque bloc */}
         <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-200 relative overflow-visible">
           {/* Check-in */}
-          <label className="group flex-1 flex items-center gap-3 px-6 py-5 cursor-pointer transition-colors duration-200 hover:bg-cream/60 focus-within:bg-cream/70">
+          <label
+            className="group flex-1 flex items-center gap-3 px-6 py-5 cursor-pointer transition-colors duration-200 hover:bg-cream/60 focus-within:bg-cream/70"
+            onClick={() => openDatePicker(checkInRef)}
+          >
             <Calendar size={18} className="text-gold-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />
             <div className="flex-1 min-w-0">
               <div className="text-[10px] uppercase tracking-widest2 text-gray-400 font-medium mb-0.5">{t('common.checkIn')}</div>
               <input
+                ref={checkInRef}
                 type="date"
                 value={toInputDate(state.checkIn)}
                 min={toInputDate(new Date())}
                 onChange={(e) => setCheckIn(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 className={dateInputClass}
               />
             </div>
@@ -74,15 +95,20 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
           </label>
 
           {/* Check-out */}
-          <label className="group flex-1 flex items-center gap-3 px-6 py-5 cursor-pointer transition-colors duration-200 hover:bg-cream/60 focus-within:bg-cream/70">
+          <label
+            className="group flex-1 flex items-center gap-3 px-6 py-5 cursor-pointer transition-colors duration-200 hover:bg-cream/60 focus-within:bg-cream/70"
+            onClick={() => openDatePicker(checkOutRef)}
+          >
             <Calendar size={18} className="text-gold-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />
             <div className="flex-1 min-w-0">
               <div className="text-[10px] uppercase tracking-widest2 text-gray-400 font-medium mb-0.5">{t('common.checkOut')}</div>
               <input
+                ref={checkOutRef}
                 type="date"
                 value={toInputDate(state.checkOut)}
                 min={toInputDate(state.checkIn || new Date())}
                 onChange={(e) => setCheckOut(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
                 className={dateInputClass}
               />
             </div>
