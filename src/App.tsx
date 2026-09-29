@@ -9,6 +9,8 @@ import Spa from '@/pages/Spa'
 import Events from '@/pages/Events'
 import Discover from '@/pages/Discover'
 import Contact from '@/pages/Contact'
+import AdminLogin from '@/pages/AdminLogin'
+import AdminDashboard from '@/pages/AdminDashboard'
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -26,12 +28,21 @@ function ScrollToTop() {
 }
 
 export default function App() {
+  const { pathname } = useLocation()
+  const adminArea = pathname.startsWith('/admin')
+
   return (
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
-      <Header />
-      <main className="flex-1">
+      {!adminArea && <Header />}
+      {adminArea ? (
         <Routes>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      ) : (
+        <main className="flex-1">
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/chambres-suites" element={<Rooms />} />
           <Route path="/restaurant" element={<Restaurant />} />
@@ -39,9 +50,10 @@ export default function App() {
           <Route path="/reunions-evenements" element={<Events />} />
           <Route path="/decouvrir-antsirabe" element={<Discover />} />
           <Route path="/contact" element={<Contact />} />
-        </Routes>
-      </main>
-      <Footer />
+          </Routes>
+        </main>
+      )}
+      {!adminArea && <Footer />}
     </div>
   )
 }

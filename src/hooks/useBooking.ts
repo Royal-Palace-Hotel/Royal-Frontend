@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { createContext, createElement, useCallback, useContext, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getTomorrow, getDefaultCheckout, toInputDate, fromInputDate } from '@/utils/dateHelpers'
 import type { BookingState } from '@/types'
@@ -12,7 +12,7 @@ import { api } from '@/utils/api'
  *
  * API integration: Checks availability and navigates to rooms page with params.
  */
-export function useBooking() {
+function useBookingState() {
   const navigate = useNavigate()
   const defaultCheckIn = getTomorrow()
 
@@ -73,6 +73,21 @@ export function useBooking() {
   }, [state, navigate])
 
   return { state, setCheckIn, setCheckOut, setRooms, setAdults, setChildren, submitSearch }
+}
+
+type BookingContextValue = ReturnType<typeof useBookingState>
+
+const BookingContext = createContext<BookingContextValue | null>(null)
+
+export function BookingProvider({ children }: { children: ReactNode }) {
+  const booking = useBookingState()
+  return createElement(BookingContext.Provider, { value: booking }, children)
+}
+
+export function useBooking() {
+  const context = useContext(BookingContext)
+  const standaloneBooking = useBookingState()
+  return context ?? standaloneBooking
 }
 
 export default useBooking

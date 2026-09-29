@@ -105,6 +105,8 @@ const fr = {
     compareTitle: 'Comparer les chambres',
     compareText: 'Trouvez la chambre idéale pour votre séjour parmi notre sélection.',
     bookThisRoom: 'Réserver cette chambre',
+    availabilityAvailable: '{{count}} chambres disponibles',
+    availabilityUnavailable: 'Complet pour ces dates',
     guests: 'voyageurs',
     size: 'Superficie',
     view: 'Vue',
@@ -292,6 +294,13 @@ const fr = {
     title: 'Réservation',
     subtitle: 'Vérifiez la disponibilité pour votre séjour',
     submitted: 'Demande de réservation envoyée ! Notre équipe vous confirmera la disponibilité par e-mail sous 24h.',
+    night: 'nuit',
+    nights: 'nuits',
+    guestDetails: 'Vos coordonnées',
+    stayDates: 'du {{checkIn}} au {{checkOut}}',
+    confirmButton: 'Confirmer la réservation',
+    successMessage: 'Merci ! Votre demande de réservation a bien été envoyée.',
+    errorMessage: 'Une erreur est survenue. Veuillez réessayer ou nous contacter directement.',
   },
 }
 

@@ -16,25 +16,31 @@ async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  let response: Response
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
       },
     })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      return { error: data.error || 'Request failed', details: data.details }
-    }
-
-    return data
   } catch (error) {
-    return { error: 'Network error' }
+    return { error: 'Unable to reach the server. Check that the API is running and try again.' }
   }
+
+  const data: ApiResponse<T> = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    return {
+      error: endpoint === '/auth/login' && response.status === 401
+        ? 'Adresse e-mail ou mot de passe incorrect.'
+        : data.error || `Request failed (${response.status})`,
+      details: data.details,
+    }
+  }
+
+  return data
 }
 
 /**
@@ -81,7 +87,7 @@ export const api = {
     rooms: number
     adults: number
     children: number
-    roomId: string
+    roomId?: string
   }) => request<any>('/bookings', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -117,4 +123,49 @@ export const api = {
     method: 'POST',
     body: JSON.stringify({ email }),
   }),
+}
+
+export async function adminRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  const token = localStorage.getItem('royal-admin-token')
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    })
+  } catch {
+    return { error: 'Unable to reach the API server. Check that it is running and try again.' }
+  }
+
+  let body: ApiResponse<T>
+  try {
+    body = await response.json()
+  } catch {
+    return { error: `Invalid API response (HTTP ${response.status}).` }
+  }
+
+  if (!response.ok) {
+    return {
+      error: `${body.error || response.statusText || 'Request failed'} (HTTP ${response.status})`,
+      details: body.details,
+    }
+  }
+
+  return body.data !== undefined ? body : { data: body as T }
+}
+
+export const adminApi = {
+  login: (email: string, password: string) => request<{ token: string; user: { id: string; email: string; role: string } }>(
+    '/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
+  ),
+  me: () => adminRequest<{ user: { userId: string; email: string; role: string } }>('/auth/me'),
+  get: <T>(endpoint: string) => adminRequest<T>(endpoint),
+  create: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(data) }),
+  update: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
+  patch: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),
+  delete: <T>(endpoint: string) => adminRequest<T>(endpoint, { method: 'DELETE' }),
 }

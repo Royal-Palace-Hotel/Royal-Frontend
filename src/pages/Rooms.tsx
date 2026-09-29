@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import PageHero from '@/components/PageHero'
 import AnimatedSection from '@/components/AnimatedSection'
@@ -12,11 +13,17 @@ import { formatCurrency } from '@/utils/helpers'
 import type { Room } from '@/types'
 
 export default function Rooms() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const [searchParams] = useSearchParams()
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [availability, setAvailability] = useState<Record<string, { availableRooms: number; available: boolean }>>({})
   const roomImages = getImagesByCategory('rooms')
+  const checkIn = searchParams.get('checkIn')
+  const checkOut = searchParams.get('checkOut')
+  const requestedRooms = searchParams.get('rooms')
+  const english = i18n.resolvedLanguage?.startsWith('en')
 
   useEffect(() => {
     async function fetchRooms() {
@@ -30,6 +37,37 @@ export default function Rooms() {
     }
     fetchRooms()
   }, [])
+
+  useEffect(() => {
+    if (!checkIn || !checkOut) {
+      setAvailability({})
+      return
+    }
+
+    const startDate = checkIn
+    const endDate = checkOut
+    let active = true
+    const requestedCount = Number(requestedRooms)
+    const roomCount = Number.isFinite(requestedCount) && requestedCount > 0 ? requestedCount : 1
+
+    async function fetchAvailability() {
+      const results = await Promise.all(
+        rooms.map(async (room) => {
+          const response = await api.checkAvailability({ checkIn: startDate, checkOut: endDate, rooms: roomCount, roomId: room.id })
+          return response.error || !response.data ? null : [room.id, response.data] as const
+        })
+      )
+
+      if (active) {
+        setAvailability(Object.fromEntries(results.filter((result): result is NonNullable<typeof result> => result !== null)))
+      }
+    }
+
+    fetchAvailability()
+    return () => {
+      active = false
+    }
+  }, [rooms, checkIn, checkOut, requestedRooms])
 
   if (loading) {
     return (
@@ -85,7 +123,7 @@ export default function Rooms() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-14">
           {rooms.map((room, idx) => (
             <AnimatedSection key={room.id} delay={idx * 0.08}>
-              <RoomCard room={room} featured={room.id === 'suite'} />
+              <RoomCard room={room} featured={room.id === 'suite'} availability={availability[room.id]} />
             </AnimatedSection>
           ))}
         </div>
@@ -100,7 +138,7 @@ export default function Rooms() {
                 <th className="text-left px-6 py-4 font-serif text-base">&nbsp;</th>
                 {rooms.map((r) => (
                   <th key={r.id} className="text-left px-6 py-4 font-serif text-base">
-                    {t(`roomsData.${r.translationKey}.name`)}
+                    {(english ? r.nameEn : r.name) || t(`roomsData.${r.translationKey}.name`)}
                   </th>
                 ))}
               </tr>
