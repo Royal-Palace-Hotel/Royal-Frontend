@@ -105,6 +105,8 @@ const en = {
     compareTitle: 'Compare Rooms',
     compareText: 'Find the ideal room for your stay from our selection.',
     bookThisRoom: 'Book This Room',
+    availabilityAvailable: '{{count}} rooms available',
+    availabilityUnavailable: 'Fully booked for these dates',
     guests: 'guests',
     size: 'Size',
     view: 'View',
@@ -292,6 +294,13 @@ const en = {
     title: 'Booking',
     subtitle: 'Check availability for your stay',
     submitted: "Booking request sent! Our team will confirm availability by email within 24 hours.",
+    night: 'night',
+    nights: 'nights',
+    guestDetails: 'Your details',
+    stayDates: 'from {{checkIn}} to {{checkOut}}',
+    confirmButton: 'Confirm booking',
+    successMessage: 'Thank you! Your booking request has been sent.',
+    errorMessage: 'An error occurred. Please try again or contact us directly.',
   },
 }
 

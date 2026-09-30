@@ -10,7 +10,7 @@ import { validateEmail } from '@/utils/helpers'
 import { api } from '@/utils/api'
 
 export default function Events() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle')
   const [eventRooms, setEventRooms] = useState<EventRoom[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,6 +25,7 @@ export default function Events() {
     eventDate: '',
     guestCount: '',
   })
+  const english = i18n.resolvedLanguage?.startsWith('en')
 
   useEffect(() => {
     async function fetchEventRooms() {
@@ -134,14 +135,16 @@ export default function Events() {
             {eventRooms.length > 0 ? eventRooms.map((room, idx) => (
               <AnimatedSection key={room.id} delay={idx * 0.1} className="bg-white rounded-md overflow-hidden shadow-card">
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={room.image} alt={t(`events.${room.key}Name`)} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={room.image} alt={(english ? room.nameEn : room.name) || t(`events.${room.key}Name`)} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-serif text-lg mb-2">{t(`events.${room.key}Name`)}</h3>
+                  <h3 className="font-serif text-lg mb-2">{(english ? room.nameEn : room.name) || t(`events.${room.key}Name`)}</h3>
                   <div className="flex items-center gap-2 text-sm text-gold-600 mb-2">
-                    <Users size={16} /> {t(`events.${room.key}Capacity`)}
+                    <Users size={16} /> {room.capacity ?? t(`events.${room.key}Capacity`)}
                   </div>
-                  <p className="text-sm text-gray-600">{t(`events.${room.key}Style`)}</p>
+                  <p className="text-sm text-gray-600">
+                    {(english ? room.descriptionEn : room.description) || t(`events.${room.key}Style`)}
+                  </p>
                 </div>
               </AnimatedSection>
             )) : (

@@ -6,6 +6,8 @@ import SectionHeading from '@/components/SectionHeading'
 import ContactForm from '@/components/ContactForm'
 import GoogleMap from '@/components/GoogleMap'
 import BookingBar from '@/components/BookingBar'
+import BookingReservationForm from '@/components/BookingReservationForm'
+import { BookingProvider } from '@/hooks/useBooking'
 
 export default function Contact() {
   const { t } = useTranslation()
@@ -17,11 +19,14 @@ export default function Contact() {
       {/* Booking section */}
       <section id="booking" className="container-luxe -mt-10 relative z-20">
         <AnimatedSection>
-          <div className="bg-white rounded-md shadow-soft-lg p-6 md:p-8">
-            <h2 className="font-serif text-xl mb-1">{t('booking.title')}</h2>
-            <p className="text-sm text-gray-500 mb-6">{t('booking.subtitle')}</p>
-            <BookingBar floating={false} />
-          </div>
+          <BookingProvider>
+            <div className="bg-white rounded-md shadow-soft-lg p-6 md:p-8">
+              <h2 className="font-serif text-xl mb-1">{t('booking.title')}</h2>
+              <p className="text-sm text-gray-500 mb-6">{t('booking.subtitle')}</p>
+              <BookingBar floating={false} />
+              <BookingReservationForm />
+            </div>
+          </BookingProvider>
         </AnimatedSection>
       </section>
 

@@ -6,6 +6,10 @@ export interface Room {
   id: string
   slug: string
   translationKey: string // key in roomsData.* translations
+  name?: string | null
+  nameEn?: string | null
+  description?: string | null
+  descriptionEn?: string | null
   price: number // in EUR per night (base price)
   currency: string
   images: string[] // paths under /images/rooms/
@@ -53,6 +57,14 @@ export interface EventRoom {
   id: string
   key: string
   image: string
+  name?: string | null
+  nameEn?: string | null
+  description?: string | null
+  descriptionEn?: string | null
+  capacity?: number | null
+  schedule?: string | null
+  price?: number | null
+  currency?: string | null
   order?: number
 }
 

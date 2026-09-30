@@ -10,6 +10,7 @@ const EUR_TO_MGA = 5000
 interface RoomCardProps {
   room: Room
   featured?: boolean
+  availability?: { availableRooms: number; available: boolean }
 }
 
 /**
@@ -18,9 +19,12 @@ interface RoomCardProps {
  * Displays a room's photo, name/description (via i18n roomsData.<translationKey>),
  * key facts (size, guests, view) and price, with a booking CTA.
  */
-export default function RoomCard({ room, featured = false }: RoomCardProps) {
-  const { t } = useTranslation()
+export default function RoomCard({ room, featured = false, availability }: RoomCardProps) {
+  const { t, i18n } = useTranslation()
   const base = `roomsData.${room.translationKey}`
+  const english = i18n.resolvedLanguage?.startsWith('en')
+  const roomName = (english ? room.nameEn : room.name) || t(`${base}.name`)
+  const roomDescription = (english ? room.descriptionEn : room.description) || t(`${base}.description`)
   const priceAr = room.currency === 'MGA' ? room.price : room.price * EUR_TO_MGA
 
   return (
@@ -29,7 +33,7 @@ export default function RoomCard({ room, featured = false }: RoomCardProps) {
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={room.images[0]}
-          alt={t(`${base}.name`)}
+          alt={roomName}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
         />
@@ -42,9 +46,9 @@ export default function RoomCard({ room, featured = false }: RoomCardProps) {
 
       {/* Contenu */}
       <div className="p-6 flex flex-col flex-1">
-        <h3 className="font-serif text-xl text-charcoal mb-2">{t(`${base}.name`)}</h3>
+        <h3 className="font-serif text-xl text-charcoal mb-2">{roomName}</h3>
         <p className="text-sm text-gray-600 leading-relaxed mb-4 flex-1">
-          {t(`${base}.description`)}
+          {roomDescription}
         </p>
 
         {/* Caractéristiques */}
@@ -76,6 +80,13 @@ export default function RoomCard({ room, featured = false }: RoomCardProps) {
               {t('common.perNight')}
             </span>
           </div>
+          {availability && (
+            <p className={`mt-2 text-xs ${availability.available ? 'text-green-700' : 'text-red-600'}`}>
+              {availability.available
+                ? t('rooms.availabilityAvailable', { count: availability.availableRooms })
+                : t('rooms.availabilityUnavailable')}
+            </p>
+          )}
         </div>
         
         {/* Bouton de réservation */}
