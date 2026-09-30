@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BedDouble, CalendarCheck2, LogOut, Mail, Menu as MenuIcon, Utensils, UsersRound, X } from 'lucide-react'
 import { adminApi } from '@/utils/api'
 
 type AdminRow = Record<string, any>
@@ -46,6 +47,14 @@ const sectionLabels: Record<Section, string> = {
   bookings: 'Réservations', 'contact-messages': 'Messages',
 }
 
+const sectionIcons = {
+  rooms: BedDouble,
+  menu: Utensils,
+  'event-rooms': UsersRound,
+  bookings: CalendarCheck2,
+  'contact-messages': Mail,
+}
+
 function emptyForm(kind: 'rooms' | 'sections' | 'items' | 'event-rooms'): Record<string, string> {
   return Object.fromEntries(fields[kind].map((field) => [
     field.key,
@@ -67,6 +76,7 @@ export default function AdminDashboard() {
   const [authorized, setAuthorized] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [active, setActive] = useState<Section>('rooms')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [menuView, setMenuView] = useState<MenuView>('sections')
   const [rows, setRows] = useState<AdminRow[]>([])
   const [sections, setSections] = useState<AdminRow[]>([])
@@ -189,6 +199,35 @@ export default function AdminDashboard() {
   const editable = active === 'rooms' || active === 'event-rooms' || active === 'menu'
   const editableKind = active === 'menu' ? menuView : active as 'rooms' | 'event-rooms'
   const activeFields = editable ? fields[editableKind] : []
+  const navigation = (Object.keys(sectionLabels) as Section[]).map((section) => {
+    const Icon = sectionIcons[section]
+    return (
+      <button key={section} onClick={() => { setActive(section); setForm({}); setEditingId(null); setMobileNavOpen(false) }}
+        aria-current={active === section ? 'page' : undefined}
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left text-sm border-l-4 transition-colors ${active === section ? 'bg-gold-500 border-gold-300 text-white' : 'border-transparent text-gray-700 hover:bg-gray-100 hover:text-charcoal'}`}>
+        <Icon size={18} aria-hidden="true" />
+        <span>{sectionLabels[section]}</span>
+      </button>
+    )
+  })
+
+  const sidebar = (
+    <>
+      <div className="px-6 py-6 border-b border-gray-200">
+        <img src="/images/logo-dark.png" alt="Royal Palace Antsirabe" className="h-14 max-w-full object-contain object-left" />
+        <h1 className="mt-3 font-serif text-xl text-charcoal">Administration</h1>
+      </div>
+      <nav className="flex-1 py-5" aria-label="Navigation d’administration">
+        <div className="space-y-1">{navigation}</div>
+      </nav>
+      <div className="p-4 border-t border-gray-200">
+        <button onClick={logout} className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-100 hover:text-charcoal">
+          <LogOut size={18} aria-hidden="true" />
+          <span>Se déconnecter</span>
+        </button>
+      </div>
+    </>
+  )
 
   if (checkingAuth || !authorized) {
     return <main className="min-h-screen grid place-items-center text-gray-600">Vérification de la session...</main>
@@ -196,19 +235,30 @@ export default function AdminDashboard() {
 
   return (
     <main className="min-h-screen bg-gray-50 text-charcoal">
-      <header className="bg-charcoal text-white px-5 md:px-8 py-4 flex items-center justify-between">
-        <div><p className="text-xs uppercase tracking-widest2 text-gold-400">Royal Palace Antsirabe</p><h1 className="font-serif text-xl">Administration</h1></div>
-        <button onClick={logout} className="border border-white/30 px-3 py-2 text-sm hover:bg-white/10">Déconnexion</button>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-gray-200 bg-white lg:flex">
+        {sidebar}
+      </aside>
+      <header className="sticky top-0 z-20 flex items-center justify-between bg-charcoal px-4 py-3 text-white lg:hidden">
+        <div><p className="text-xs uppercase tracking-widest2 text-gold-400">Royal Palace Antsirabe</p><h1 className="font-serif text-lg">Administration</h1></div>
+        <button onClick={() => setMobileNavOpen(true)} aria-label="Ouvrir la navigation" aria-expanded={mobileNavOpen}
+          className="p-2 hover:bg-white/10">
+          <MenuIcon size={22} aria-hidden="true" />
+        </button>
       </header>
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-8 py-7">
-        <nav className="flex flex-wrap gap-2 border-b border-gray-200 pb-4 mb-6">
-          {(Object.keys(sectionLabels) as Section[]).map((section) => (
-            <button key={section} onClick={() => { setActive(section); setForm({}); setEditingId(null) }}
-              className={`px-4 py-2 text-sm border ${active === section ? 'bg-gold-500 border-gold-500 text-white' : 'bg-white border-gray-300 hover:border-gold-500'}`}>
-              {sectionLabels[section]}
-            </button>
-          ))}
-        </nav>
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <button className="absolute inset-0 bg-black/50" aria-label="Fermer la navigation" onClick={() => setMobileNavOpen(false)} />
+          <aside className="relative flex h-full w-64 flex-col bg-white shadow-xl">
+            <div className="absolute right-3 top-5">
+              <button onClick={() => setMobileNavOpen(false)} aria-label="Fermer la navigation" className="p-2 text-gray-700 hover:bg-gray-100">
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+            {sidebar}
+          </aside>
+        </div>
+      )}
+      <div className="mx-auto max-w-screen-2xl px-4 py-5 md:px-8 md:py-7 lg:ml-64">
 
         {active === 'menu' && (
           <div className="flex gap-2 mb-5" role="tablist" aria-label="Gestion du restaurant">
