@@ -49,7 +49,27 @@ export interface SpaTreatment {
   id: string
   key: string // i18n key suffix e.g. 'treatment1'
   durationKey: string
+  /** Libellés saisis au back-office ; absents, on retombe sur les clés i18n. */
+  name?: string | null
+  nameEn?: string | null
+  duration?: string | null
+  durationEn?: string | null
+  description?: string | null
+  descriptionEn?: string | null
   price: number
+  order?: number
+}
+
+export interface DiscoverItem {
+  id: string
+  type: 'activity' | 'attraction'
+  key?: string | null
+  title?: string | null
+  titleEn?: string | null
+  text?: string | null
+  textEn?: string | null
+  icon?: string | null
+  image?: string | null
   order?: number
 }
 

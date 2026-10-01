@@ -7,7 +7,7 @@ import SectionHeading from '@/components/SectionHeading'
 import { equipmentKeys } from '@/data/events'
 import type { EventFormData, EventRoom } from '@/types'
 import { validateEmail } from '@/utils/helpers'
-import { api } from '@/utils/api'
+import { api, resolveImageUrl } from '@/utils/api'
 
 export default function Events() {
   const { t, i18n } = useTranslation()
@@ -135,7 +135,7 @@ export default function Events() {
             {eventRooms.length > 0 ? eventRooms.map((room, idx) => (
               <AnimatedSection key={room.id} delay={idx * 0.1} className="bg-white rounded-md overflow-hidden shadow-card">
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={room.image} alt={(english ? room.nameEn : room.name) || t(`events.${room.key}Name`)} className="w-full h-full object-cover" loading="lazy" />
+                  <img src={resolveImageUrl(room.image)} alt={(english ? room.nameEn : room.name) || t(`events.${room.key}Name`)} className="w-full h-full object-cover" loading="lazy" />
                 </div>
                 <div className="p-6">
                   <h3 className="font-serif text-lg mb-2">{(english ? room.nameEn : room.name) || t(`events.${room.key}Name`)}</h3>

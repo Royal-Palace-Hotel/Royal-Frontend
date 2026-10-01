@@ -2,14 +2,50 @@ import rooms from '@/data/rooms'
 import { menuSections } from '@/data/menu'
 import spaTreatments from '@/data/spa'
 import eventRooms from '@/data/events'
+import galleryImages from '@/data/gallery'
+import { activities, attractionKeys } from '@/data/discover'
+
+/**
+ * Repli de la page « Découvrir » quand l'API est injoignable.
+ * Les données statiques portent des clés i18n (`activity1Title`) ; on les
+ * ramène à la forme de l'API, où `key` vaut `activity1` et le composant
+ * reconstruit la clé de traduction.
+ */
+const discoverFallback = {
+  activities: activities.map((activity, index) => ({
+    id: activity.id,
+    type: 'activity' as const,
+    key: activity.titleKey.replace(/Title$/, ''),
+    title: null, titleEn: null, text: null, textEn: null,
+    icon: activity.icon,
+    image: activity.image,
+    order: index,
+  })),
+  attractions: attractionKeys.map((key, index) => ({
+    id: key,
+    type: 'attraction' as const,
+    key,
+    title: null, titleEn: null, text: null, textEn: null,
+    icon: null, image: null,
+    order: index,
+  })),
+}
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
+export interface PageMeta {
+  page: number
+  perPage: number
+  total: number
+  totalPages: number
+}
 
 interface ApiResponse<T> {
   data?: T
   error?: string
   details?: any
   message?: string
+  meta?: PageMeta
 }
 
 async function request<T>(
@@ -66,6 +102,11 @@ export const api = {
   getMenu: () => withFallback(() => request<any[]>('/content/menu'), menuSections as any[]),
   getSpa: () => withFallback(() => request<any[]>('/content/spa'), spaTreatments as any[]),
   getEvents: () => withFallback(() => request<any[]>('/content/events'), eventRooms as any[]),
+  getGallery: () => withFallback(() => request<any[]>('/content/gallery'), galleryImages as any[]),
+  getDiscover: () => withFallback(
+    () => request<{ activities: any[]; attractions: any[] }>('/content/discover'),
+    discoverFallback,
+  ),
 
   // Bookings
   checkAvailability: (data: {
@@ -158,14 +199,132 @@ export async function adminRequest<T>(endpoint: string, options: RequestInit = {
   return body.data !== undefined ? body : { data: body as T }
 }
 
+/** Origine de l'API, sans le suffixe `/api`. */
+const API_ORIGIN = API_URL.replace(/\/api\/?$/, '')
+
+/**
+ * Résout le chemin d'une image.
+ *
+ * Les fichiers envoyés depuis le back-office sont stockés par l'API et
+ * référencés en base par un chemin relatif `/uploads/<fichier>` — la base
+ * reste ainsi valable si le domaine de l'API change. Ils sont servis par
+ * l'API, pas par le front : ce sont les seuls chemins à préfixer. Les images
+ * livrées avec le site (`/images/...`) et les URL absolues passent telles
+ * quelles.
+ */
+export function resolveImageUrl(src?: string | null): string {
+  if (!src) return ''
+  if (src.startsWith('/uploads/')) return `${API_ORIGIN}${src}`
+  return src
+}
+
+export interface UploadedFile {
+  url: string
+  filename: string
+  originalName: string
+  size: number
+  mimeType: string
+}
+
+/**
+ * Envoie une ou plusieurs images.
+ *
+ * On ne pose pas `Content-Type` : le navigateur doit l'écrire lui-même pour
+ * y inclure la limite (`boundary`) du corps multipart.
+ */
+export async function uploadImages(files: File[]): Promise<ApiResponse<UploadedFile[]>> {
+  const token = localStorage.getItem('royal-admin-token')
+  const body = new FormData()
+  for (const file of files) body.append('files', file)
+
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}/admin/uploads`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body,
+    })
+  } catch {
+    return { error: 'Envoi impossible : serveur injoignable.' }
+  }
+
+  let payload: ApiResponse<UploadedFile[]>
+  try {
+    payload = await response.json()
+  } catch {
+    return { error: `Envoi impossible (HTTP ${response.status}).` }
+  }
+  if (!response.ok) return { error: payload.error || `Envoi impossible (HTTP ${response.status}).` }
+  return payload
+}
+
+/** Construit une query string en ignorant les filtres vides. */
+export function queryString(params: Record<string, string | number | undefined | null>) {
+  const search = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') search.set(key, String(value))
+  }
+  const text = search.toString()
+  return text ? `?${text}` : ''
+}
+
+export interface AdminUser {
+  userId: string
+  email: string
+  name: string | null
+  role: string
+  lastLoginAt: string | null
+}
+
 export const adminApi = {
   login: (email: string, password: string) => request<{ token: string; user: { id: string; email: string; role: string } }>(
     '/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }
   ),
-  me: () => adminRequest<{ user: { userId: string; email: string; role: string } }>('/auth/me'),
+  me: () => adminRequest<{ user: AdminUser }>('/auth/me'),
   get: <T>(endpoint: string) => adminRequest<T>(endpoint),
   create: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(data) }),
   update: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
   patch: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: <T>(endpoint: string) => adminRequest<T>(endpoint, { method: 'DELETE' }),
+}
+
+/**
+ * Télécharge un export CSV.
+ *
+ * Un simple lien ne conviendrait pas : l'endpoint exige l'en-tête
+ * Authorization, que le navigateur n'enverrait pas sur une navigation.
+ * On récupère donc le fichier en mémoire avant de déclencher la sauvegarde.
+ */
+export async function downloadCsv(endpoint: string, fallbackName: string): Promise<string | null> {
+  const token = localStorage.getItem('royal-admin-token')
+  let response: Response
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+  } catch {
+    return 'Serveur injoignable. Vérifiez que l’API est démarrée.'
+  }
+
+  if (!response.ok) {
+    try {
+      const body = await response.json()
+      return body.error || `Export impossible (HTTP ${response.status}).`
+    } catch {
+      return `Export impossible (HTTP ${response.status}).`
+    }
+  }
+
+  const disposition = response.headers.get('Content-Disposition') || ''
+  const match = disposition.match(/filename="([^"]+)"/)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = match?.[1] || fallbackName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+  return null
 }

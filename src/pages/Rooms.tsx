@@ -8,7 +8,7 @@ import SectionHeading from '@/components/SectionHeading'
 import RoomCard from '@/components/RoomCard'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
-import { getImagesByCategory } from '@/data/gallery'
+import { useGalleryImages } from '@/hooks/useGallery'
 import { formatCurrency } from '@/utils/helpers'
 import type { Room } from '@/types'
 
@@ -19,7 +19,7 @@ export default function Rooms() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [availability, setAvailability] = useState<Record<string, { availableRooms: number; available: boolean }>>({})
-  const roomImages = getImagesByCategory('rooms')
+  const roomImages = useGalleryImages('rooms')
   const checkIn = searchParams.get('checkIn')
   const checkOut = searchParams.get('checkOut')
   const requestedRooms = searchParams.get('rooms')
