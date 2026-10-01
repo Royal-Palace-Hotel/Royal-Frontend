@@ -7,17 +7,35 @@ import AnimatedSection from '@/components/AnimatedSection'
 import SectionHeading from '@/components/SectionHeading'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
-import { getImagesByCategory } from '@/data/gallery'
+import { useGalleryImages } from '@/hooks/useGallery'
 import { formatAriary } from '@/utils/helpers'
 import type { SpaTreatment } from '@/types'
 
 export default function Spa() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const english = i18n.resolvedLanguage?.startsWith('en')
+
+  /**
+   * Les soins saisis au back-office portent leur propre libellé ; les lignes
+   * d'origine n'ont qu'une clé de traduction. On préfère le libellé saisi et
+   * on retombe sur la traduction quand il est absent.
+   */
+  const treatmentName = (tr: SpaTreatment) => {
+    const custom = english ? tr.nameEn || tr.name : tr.name
+    return custom || t(`spa.${tr.key}`)
+  }
+  const treatmentDuration = (tr: SpaTreatment) => {
+    const custom = english ? tr.durationEn || tr.duration : tr.duration
+    return custom || t(`spa.${tr.durationKey}`)
+  }
+  const description = (tr: SpaTreatment) =>
+    (english ? tr.descriptionEn || tr.description : tr.description) || ''
+
   const [spaTreatments, setSpaTreatments] = useState<SpaTreatment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const poolImages = getImagesByCategory('pool')
-  const spaImages = getImagesByCategory('spa')
+  const poolImages = useGalleryImages('pool')
+  const spaImages = useGalleryImages('spa')
 
   useEffect(() => {
     async function fetchSpaTreatments() {
@@ -101,8 +119,11 @@ export default function Spa() {
           {spaTreatments.length > 0 ? spaTreatments.map((tr) => (
             <div key={tr.id} className="flex justify-between items-center border border-gray-200 rounded-md p-5 hover:border-gold-500 transition-colors">
               <div>
-                <div className="font-medium text-charcoal">{t(`spa.${tr.key}`)}</div>
-                <div className="text-xs text-gray-500 mt-1">{t(`spa.${tr.durationKey}`)}</div>
+                <div className="font-medium text-charcoal">{treatmentName(tr)}</div>
+                <div className="text-xs text-gray-500 mt-1">{treatmentDuration(tr)}</div>
+                {description(tr) && (
+                  <p className="mt-2 max-w-sm text-xs text-gray-500">{description(tr)}</p>
+                )}
               </div>
               <div className="text-right">
                 <div className="text-gold-600 font-serif text-lg">{formatAriary(tr.price)}</div>

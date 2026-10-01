@@ -6,7 +6,7 @@ import AnimatedSection from '@/components/AnimatedSection'
 import SectionHeading from '@/components/SectionHeading'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
-import { getImagesByCategory } from '@/data/gallery'
+import { useGalleryImages } from '@/hooks/useGallery'
 import { formatAriary } from '@/utils/helpers'
 import { useLanguage } from '@/hooks/useLanguage'
 import type { MenuSection } from '@/types'
@@ -17,7 +17,7 @@ export default function Restaurant() {
   const [menuSections, setMenuSections] = useState<MenuSection[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const restaurantImages = getImagesByCategory('restaurant')
+  const restaurantImages = useGalleryImages('restaurant')
 
   useEffect(() => {
     async function fetchMenu() {

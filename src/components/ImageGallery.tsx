@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { resolveImageUrl } from '@/utils/api'
 import type { GalleryImage } from '@/types'
 
 interface ImageGalleryProps {
@@ -49,7 +50,7 @@ export default function ImageGallery({ images, columns = 3 }: ImageGalleryProps)
             className="group relative aspect-[4/3] overflow-hidden rounded-md bg-gray-100"
           >
             <img
-              src={img.src}
+              src={resolveImageUrl(img.src)}
               alt={img.alt}
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -91,7 +92,7 @@ export default function ImageGallery({ images, columns = 3 }: ImageGalleryProps)
               key={images[activeIndex].id}
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              src={images[activeIndex].src}
+              src={resolveImageUrl(images[activeIndex].src)}
               alt={images[activeIndex].alt}
               className="max-h-[85vh] max-w-[90vw] object-contain rounded shadow-2xl"
               onClick={(e) => e.stopPropagation()}

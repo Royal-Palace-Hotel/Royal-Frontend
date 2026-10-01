@@ -5,7 +5,7 @@ import Hero from '@/components/Hero'
 import AnimatedSection from '@/components/AnimatedSection'
 import SectionHeading from '@/components/SectionHeading'
 import ImageGallery from '@/components/ImageGallery'
-import { galleryImages } from '@/data/gallery'
+import { useGalleryImages } from '@/hooks/useGallery'
 
 const services = [
   { key: 'service1', icon: BedDouble, image: '/images/rooms/room-2.jpg', link: '/chambres-suites' },
@@ -29,7 +29,7 @@ const sisterHotels = [
 export default function Home() {
   const { t } = useTranslation()
 
-  const homeGallery = galleryImages
+  const homeGallery = useGalleryImages()
     .filter((img) => ['rooms', 'restaurant', 'pool', 'discover'].includes(img.category))
     .slice(0, 8)
 
