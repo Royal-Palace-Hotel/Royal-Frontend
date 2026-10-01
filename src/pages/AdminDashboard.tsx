@@ -42,6 +42,14 @@ const fields: Record<'rooms' | 'sections' | 'items' | 'event-rooms', Field[]> = 
   ],
 }
 
+const englishFieldKeys = new Set(['nameEn', 'descriptionEn', 'titleEn'])
+
+function fallbackEnglishValue(value: string, fallback: string) {
+  const trimmedValue = value?.trim() || ''
+  const trimmedFallback = fallback?.trim() || ''
+  return trimmedValue || trimmedFallback
+}
+
 const sectionLabels: Record<Section, string> = {
   rooms: 'Chambres', menu: 'Restaurant', 'event-rooms': 'Salles de réunion',
   bookings: 'Réservations', 'contact-messages': 'Messages',
@@ -82,9 +90,12 @@ export default function AdminDashboard() {
   const [sections, setSections] = useState<AdminRow[]>([])
   const [form, setForm] = useState<Record<string, string>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [showEnglish, setShowEnglish] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   useEffect(() => {
     if (!localStorage.getItem('royal-admin-token')) {
@@ -102,13 +113,16 @@ export default function AdminDashboard() {
     })
   }, [navigate])
 
+  function sectionEndpoint() {
+    if (active === 'rooms' || active === 'event-rooms') return `/admin/${active}`
+    return active === 'menu' ? `/menu/${menuView}` : `/${active}`
+  }
+
   async function loadRows() {
     if (!authorized) return
     setLoading(true)
     setError('')
-    const endpoint = active === 'menu'
-      ? `/menu/${menuView}`
-      : `/${active}`
+    const endpoint = sectionEndpoint()
     const response = await adminApi.get<AdminRow[]>(endpoint)
     if (response.error) setError(response.error)
     else setRows(response.data || [])
@@ -128,6 +142,8 @@ export default function AdminDashboard() {
     const kind = active === 'menu' ? menuView : active as 'rooms' | 'event-rooms'
     setEditingId(null)
     setForm(emptyForm(kind))
+    setShowEnglish(false)
+    setUploadError('')
     if (kind === 'items' && sections[0]) setForm((current) => ({ ...current, sectionId: sections[0].id }))
     setError('')
   }
@@ -136,8 +152,37 @@ export default function AdminDashboard() {
     const kind = active === 'menu' ? menuView : active as 'rooms' | 'event-rooms'
     setEditingId(row.id)
     setForm(rowToForm(row, kind))
+    setShowEnglish(Boolean(row.nameEn || row.descriptionEn || row.titleEn))
+    setUploadError('')
     if (kind === 'items') setForm((current) => ({ ...current, sectionId: String(row.sectionId) }))
     setError('')
+  }
+
+  async function uploadImages(files: FileList | null, field: 'image' | 'images') {
+    if (!files?.length) return
+    setUploadingImages(true)
+    setUploadError('')
+    const uploadedPaths: string[] = []
+    try {
+      for (const file of Array.from(files)) {
+        const response = await adminApi.uploadImage(file)
+        if (response.error || !response.data?.path) {
+          setUploadError(response.error || 'The image could not be uploaded.')
+          break
+        }
+        uploadedPaths.push(response.data.path)
+      }
+      if (uploadedPaths.length) {
+        setForm((current) => ({
+          ...current,
+          [field]: field === 'images'
+            ? [...(current.images || '').split('\n').filter(Boolean), ...uploadedPaths].join('\n')
+            : uploadedPaths[0],
+        }))
+      }
+    } finally {
+      setUploadingImages(false)
+    }
   }
 
   function payload() {
@@ -146,23 +191,36 @@ export default function AdminDashboard() {
       if (field.numeric) result[field.key] = Number(form[field.key] || 0)
     }
     if (active === 'rooms') {
-      result.images = form.images.split('\n').map((value) => value.trim()).filter(Boolean)
-      result.amenities = form.amenities.split('\n').map((value) => value.trim()).filter(Boolean)
+      result.nameEn = fallbackEnglishValue(form.nameEn || '', form.name || '')
+      result.descriptionEn = fallbackEnglishValue(form.descriptionEn || '', form.description || '')
+      result.images = (form.images || '').split('\n').map((value) => value.trim()).filter(Boolean)
+      result.amenities = (form.amenities || '').split('\n').map((value) => value.trim()).filter(Boolean)
       if (!form.translationKey.trim()) delete result.translationKey
     }
     if (active === 'event-rooms') {
+      result.nameEn = fallbackEnglishValue(form.nameEn || '', form.name || '')
+      result.descriptionEn = fallbackEnglishValue(form.descriptionEn || '', form.description || '')
       for (const key of ['capacity', 'price']) if (!form[key]) result[key] = null
       for (const key of ['schedule', 'currency']) if (!form[key]) result[key] = null
-      if (!form.key.trim()) delete result.key
+      if (!form.key?.trim()) delete result.key
     }
-    if (active === 'menu' && menuView === 'items') result.sectionId = form.sectionId
+    if (active === 'menu') {
+      if (menuView === 'sections') {
+        result.titleEn = fallbackEnglishValue(form.titleEn || '', form.title || '')
+      }
+      if (menuView === 'items') {
+        result.nameEn = fallbackEnglishValue(form.nameEn || '', form.name || '')
+        result.descriptionEn = fallbackEnglishValue(form.descriptionEn || '', form.description || '')
+        result.sectionId = form.sectionId
+      }
+    }
     return result
   }
 
   async function save(event: FormEvent) {
     event.preventDefault()
     setSaving(true)
-    const endpoint = active === 'menu' ? `/menu/${menuView}` : `/${active}`
+    const endpoint = sectionEndpoint()
     const response = editingId
       ? await adminApi.update(`${endpoint}/${editingId}`, payload())
       : await adminApi.create(endpoint, payload())
@@ -178,7 +236,7 @@ export default function AdminDashboard() {
 
   async function remove(row: AdminRow) {
     if (!window.confirm('Supprimer cet élément ?')) return
-    const endpoint = active === 'menu' ? `/menu/${menuView}` : `/${active}`
+    const endpoint = sectionEndpoint()
     const response = await adminApi.delete(`${endpoint}/${row.id}`)
     if (response.error) setError(response.error)
     else await loadRows()
@@ -198,7 +256,7 @@ export default function AdminDashboard() {
 
   const editable = active === 'rooms' || active === 'event-rooms' || active === 'menu'
   const editableKind = active === 'menu' ? menuView : active as 'rooms' | 'event-rooms'
-  const activeFields = editable ? fields[editableKind] : []
+  const activeFields = editable ? fields[editableKind].filter((field) => !(!showEnglish && englishFieldKeys.has(field.key))) : []
   const navigation = (Object.keys(sectionLabels) as Section[]).map((section) => {
     const Icon = sectionIcons[section]
     return (
@@ -307,32 +365,86 @@ export default function AdminDashboard() {
             </section>
 
             <form onSubmit={save} className="bg-white border border-gray-200 p-5 space-y-4">
-              <h2 className="font-serif text-lg">{editingId ? 'Modifier' : 'Nouvel élément'}</h2>
-              {activeFields.map((field) => (
-                <label key={field.key} className="block text-sm text-gray-700">
-                  {field.label}
-                  {field.key === 'sectionId' && active === 'menu' ? (
-                    <select value={form.sectionId || ''} required onChange={(event) => setForm({ ...form, sectionId: event.target.value })}
-                      className="mt-1 w-full border border-gray-300 px-3 py-2">
-                      <option value="">Choisir une section</option>
-                      {sections.map((section) => <option key={section.id} value={section.id}>{section.title}</option>)}
-                    </select>
-                  ) : field.multiline ? (
-                    <textarea rows={3} value={form[field.key] || ''} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                      className="mt-1 w-full border border-gray-300 px-3 py-2" />
-                  ) : (
-                    <input type={field.numeric ? 'number' : 'text'} min={field.numeric ? 0 : undefined}
-                      required={!['translationKey', 'key', 'schedule', 'capacity', 'price', 'currency'].includes(field.key)}
-                      value={form[field.key] || ''} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                      className="mt-1 w-full border border-gray-300 px-3 py-2" />
-                  )}
-                </label>
-              ))}
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-serif text-lg">{editingId ? 'Modifier' : 'Nouvel élément'}</h2>
+                {activeFields.some((field) => englishFieldKeys.has(field.key)) && (
+                  <button
+                    type="button"
+                    onClick={() => setShowEnglish((current) => !current)}
+                    className="text-sm font-medium text-gold-700 hover:text-gold-800"
+                  >
+                    {showEnglish ? 'Masquer la version anglaise' : 'Ajouter une version anglaise'}
+                  </button>
+                )}
+              </div>
+              {activeFields.map((field) => {
+                if (active === 'event-rooms' && field.key === 'image') {
+                  return (
+                    <div key={field.key} className="space-y-2 text-sm text-gray-700">
+                      <label className="block">{field.label}
+                        <input type="file" accept="image/jpeg,image/png,image/webp"
+                          onChange={(event) => { void uploadImages(event.currentTarget.files, 'image'); event.currentTarget.value = '' }}
+                          className="admin-file-input" />
+                      </label>
+                      {uploadingImages && <p className="text-gray-500">Téléversement en cours...</p>}
+                      {uploadError && <p role="alert" className="text-red-700">{uploadError}</p>}
+                      {form.image && <img src={form.image} alt="Aperçu de la salle" className="h-24 w-36 border border-gray-200 object-cover" />}
+                    </div>
+                  )
+                }
+                if (active === 'rooms' && field.key === 'images') {
+                  const imagePaths = (form.images || '').split('\n').map((image) => image.trim()).filter(Boolean)
+                  return (
+                    <div key={field.key} className="space-y-2 text-sm text-gray-700">
+                      <label className="block">Images
+                        <input type="file" accept="image/jpeg,image/png,image/webp" multiple
+                          onChange={(event) => { void uploadImages(event.currentTarget.files, 'images'); event.currentTarget.value = '' }}
+                          className="admin-file-input" />
+                      </label>
+                      {uploadingImages && <p className="text-gray-500">Téléversement en cours...</p>}
+                      {uploadError && <p role="alert" className="text-red-700">{uploadError}</p>}
+                      {imagePaths.length > 0 && <div className="flex flex-wrap gap-3">
+                        {imagePaths.map((image, index) => (
+                          <div key={`${image}-${index}`} className="space-y-1">
+                            <img src={image} alt={`Aperçu ${index + 1}`} className="h-20 w-28 border border-gray-200 object-cover" />
+                            <button type="button" onClick={() => setForm((current) => ({
+                              ...current,
+                              images: (current.images || '').split('\n').filter((_, imageIndex) => imageIndex !== index).join('\n'),
+                            }))} className="text-xs text-red-700 hover:underline">
+                              Retirer
+                            </button>
+                          </div>
+                        ))}
+                      </div>}
+                    </div>
+                  )
+                }
+                return (
+                  <label key={field.key} className="block text-sm text-gray-700">
+                    {field.label}
+                    {field.key === 'sectionId' && active === 'menu' ? (
+                      <select value={form.sectionId || ''} required onChange={(event) => setForm({ ...form, sectionId: event.target.value })}
+                        className="mt-1 w-full border border-gray-300 px-3 py-2">
+                        <option value="">Choisir une section</option>
+                        {sections.map((section) => <option key={section.id} value={section.id}>{section.title}</option>)}
+                      </select>
+                    ) : field.multiline ? (
+                      <textarea rows={3} value={form[field.key] || ''} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                        className="mt-1 w-full border border-gray-300 px-3 py-2" />
+                    ) : (
+                      <input type={field.numeric ? 'number' : 'text'} min={field.numeric ? 0 : undefined}
+                        required={!['translationKey', 'key', 'schedule', 'capacity', 'price', 'currency'].includes(field.key)}
+                        value={form[field.key] || ''} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                        className="mt-1 w-full border border-gray-300 px-3 py-2" />
+                    )}
+                  </label>
+                )
+              })}
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={saving} className="bg-gold-500 text-white px-4 py-2 text-sm disabled:opacity-60">
+                <button type="submit" disabled={saving || uploadingImages} className="bg-gold-500 text-white px-4 py-2 text-sm disabled:opacity-60">
                   {saving ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
-                <button type="button" onClick={() => { setForm({}); setEditingId(null) }} className="border border-gray-300 px-4 py-2 text-sm">Effacer</button>
+                <button type="button" onClick={() => { setForm({}); setEditingId(null); setShowEnglish(false) }} className="border border-gray-300 px-4 py-2 text-sm">Effacer</button>
               </div>
             </form>
           </div>

@@ -132,7 +132,7 @@ export async function adminRequest<T>(endpoint: string, options: RequestInit = {
     response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers: {
-        'Content-Type': 'application/json',
+        ...(typeof FormData !== 'undefined' && options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
@@ -168,4 +168,9 @@ export const adminApi = {
   update: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
   patch: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),
   delete: <T>(endpoint: string) => adminRequest<T>(endpoint, { method: 'DELETE' }),
+  uploadImage: (file: File) => {
+    const body = new FormData()
+    body.append('image', file)
+    return adminRequest<{ path: string }>('/admin/uploads', { method: 'POST', body })
+  },
 }
