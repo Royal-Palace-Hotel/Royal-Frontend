@@ -35,14 +35,20 @@ export function AccountPanel({ currentUser }: { currentUser: AdminUser | null })
     }
 
     setSaving(true)
-    const response = await adminApi.update('/admin/account/password', {
-      currentPassword: form.currentPassword,
-      newPassword: form.newPassword,
-    })
+    const response = await adminApi.update<{ id: string; token?: string }>(
+      '/admin/account/password',
+      { currentPassword: form.currentPassword, newPassword: form.newPassword },
+    )
     setSaving(false)
 
     if (response.error) { setError(response.error); return }
-    setNotice('Mot de passe modifié. Il sera demandé à votre prochaine connexion.')
+
+    // Le changement révoque les jetons antérieurs : on adopte celui que l'API
+    // vient d'émettre, sinon la session courante serait déconnectée aussi.
+    if (response.data?.token) {
+      localStorage.setItem('royal-admin-token', response.data.token)
+    }
+    setNotice('Mot de passe modifié. Vos autres sessions ont été déconnectées.')
     setForm({ currentPassword: '', newPassword: '', confirm: '' })
   }
 

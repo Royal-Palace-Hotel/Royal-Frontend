@@ -1,5 +1,5 @@
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import Home from '@/pages/Home'
@@ -9,8 +9,16 @@ import Spa from '@/pages/Spa'
 import Events from '@/pages/Events'
 import Discover from '@/pages/Discover'
 import Contact from '@/pages/Contact'
-import AdminLogin from '@/pages/AdminLogin'
-import AdminDashboard from '@/pages/AdminDashboard'
+
+/**
+ * Le back-office est chargé à la demande.
+ *
+ * Tableau de bord, formulaires et panneaux ne servent qu'aux quelques
+ * personnes qui s'y connectent : les inclure dans le bundle principal ferait
+ * payer leur poids à tous les visiteurs du site.
+ */
+const AdminLogin = lazy(() => import('@/pages/AdminLogin'))
+const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation()
@@ -36,10 +44,16 @@ export default function App() {
       <ScrollToTop />
       {!adminArea && <Header />}
       {adminArea ? (
-        <Routes>
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Routes>
+        <Suspense fallback={
+          <main className="grid min-h-screen place-items-center text-gray-600">
+            Chargement de l’administration…
+          </main>
+        }>
+          <Routes>
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Routes>
+        </Suspense>
       ) : (
         <main className="flex-1">
           <Routes>

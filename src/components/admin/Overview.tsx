@@ -10,6 +10,7 @@ interface Stats {
     total: number; pending: number; confirmed: number; cancelled: number
     thisMonth: number; upcomingArrivals: number
   }
+  today: { arrivals: number; departures: number; roomsOccupied: number }
   occupancy: { nightsSold: number; capacity: number; rate: number; daysInMonth: number }
   revenue: { estimatedThisMonth: number; currency: string }
   messages: { total: number; unread: number }
@@ -55,8 +56,19 @@ export default function Overview({ onOpenSection }: { onOpenSection: (section: s
 
   const { bookings, occupancy, revenue, messages, newsletter } = stats
 
+  const today = stats.today
+
   return (
     <div className="space-y-6">
+      {/* La journée en cours, pour la réception. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StatTile label="Arrivées aujourd’hui" value={today.arrivals}
+          tone={today.arrivals > 0 ? 'good' : 'neutral'} />
+        <StatTile label="Départs aujourd’hui" value={today.departures} />
+        <StatTile label="Chambres occupées ce soir" value={today.roomsOccupied}
+          hint={`sur ${occupancy.capacity / occupancy.daysInMonth} disponibles`} />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile label="Réservations ce mois" value={bookings.thisMonth}
           hint={`${bookings.total} au total`} />
