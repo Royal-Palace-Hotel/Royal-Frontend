@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Download } from 'lucide-react'
 import { adminApi, downloadCsv, PageMeta, queryString } from '@/utils/api'
 import {
-  BOOKING_STATUS, Button, Card, Drawer, EmptyState, ErrorBanner, Field, Pagination,
+  BOOKING_STATUS, Button, Card, Drawer, EmptyState, ErrorBanner, Field, Notice, Pagination,
   SearchInput, Select, Spinner, StatusBadge, Toolbar,
 } from './ui'
 
@@ -20,6 +20,26 @@ const SORT_OPTIONS = [
   { value: 'status', label: 'Trier : statut' },
 ]
 
+const STATUS_DONE: Record<string, string> = {
+  confirmed: 'Réservation confirmée',
+  cancelled: 'Réservation annulée',
+  pending: 'Réservation remise en attente',
+}
+
+/**
+ * Le back-end dit si l'e-mail est réellement parti. Un envoi peut échouer sans
+ * empêcher le changement de statut : l'admin doit le voir pour prévenir le
+ * client lui-même, d'où les trois cas distincts plutôt qu'un « enregistré ».
+ */
+function noticeFor(status: string, notification?: 'not-due' | 'sent' | 'failed') {
+  const done = STATUS_DONE[status] ?? 'Statut mis à jour'
+  if (notification === 'sent') return `${done}. Client prévenu par e-mail.`
+  if (notification === 'failed') {
+    return `${done}, mais l’e-mail n’a pas pu être envoyé — prévenez le client vous-même.`
+  }
+  return `${done}.`
+}
+
 const date = (value?: string | null) =>
   value ? new Date(value).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 const dateTime = (value?: string | null) =>
@@ -36,6 +56,15 @@ export default function BookingsPanel() {
   const [detail, setDetail] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+
+  // Le bandeau de confirmation s'effface seul : il rend compte d'une action
+  // passée, il ne doit pas rester en haut de la liste indéfiniment.
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(''), 8000)
+    return () => clearTimeout(timer)
+  }, [notice])
 
   // La recherche part 350 ms après la dernière frappe, pas à chaque caractère.
   useEffect(() => {
@@ -65,8 +94,9 @@ export default function BookingsPanel() {
   }
 
   async function setStatusOf(id: string, next: string) {
-    const response = await adminApi.patch(`/admin/bookings/${id}`, { status: next })
+    const response = await adminApi.patch<any>(`/admin/bookings/${id}`, { status: next })
     if (response.error) { setError(response.error); return }
+    setNotice(noticeFor(next, response.data?.notification))
     setDetail((current: any) => (current && current.id === id ? { ...current, status: next } : current))
     await load()
   }
@@ -82,6 +112,7 @@ export default function BookingsPanel() {
   return (
     <>
       {error && <ErrorBanner message={error} onDismiss={() => setError('')} />}
+      {notice && <Notice message={notice} />}
 
       <Toolbar>
         <SearchInput value={search} onChange={setSearch} placeholder="Nom, e-mail, téléphone…" />
