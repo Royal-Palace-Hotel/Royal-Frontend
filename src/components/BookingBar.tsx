@@ -121,10 +121,7 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
           <div ref={guestsRef} className="flex-1 relative z-10">
             <button
               type="button"
-              onClick={() => {
-                console.log('Button clicked, current state:', guestsOpen);
-                setGuestsOpen((v) => !v);
-              }}
+              onClick={() => setGuestsOpen((open) => !open)}
               className="group w-full flex items-center gap-3 px-6 py-5 text-left transition-colors duration-200 hover:bg-cream/60"
             >
               <Users size={18} className="text-gold-500 shrink-0 transition-transform duration-200 group-hover:scale-110" />

@@ -39,11 +39,46 @@ function explain(error: string) {
   return error
 }
 
-export default function NewBookingDrawer({ onClose, onCreated }: {
+/**
+ * Réservation existante à modifier. Les champs arrivent de `/admin/bookings/:id`,
+ * où les dates sont des horodatages ISO : on ne garde que le jour, le reste du
+ * formulaire ne manipule que des dates.
+ */
+export interface EditableBooking {
+  id: string
+  guestName: string
+  guestEmail: string | null
+  guestPhone: string | null
+  roomId: string
+  checkIn: string
+  checkOut: string
+  rooms: number
+  adults: number
+  children: number
+  status: string
+}
+
+const asForm = (booking: EditableBooking) => ({
+  guestName: booking.guestName,
+  guestPhone: booking.guestPhone ?? '',
+  guestEmail: booking.guestEmail ?? '',
+  roomId: booking.roomId,
+  checkIn: booking.checkIn.slice(0, 10),
+  checkOut: booking.checkOut.slice(0, 10),
+  rooms: String(booking.rooms),
+  adults: String(booking.adults),
+  children: String(booking.children),
+  status: booking.status,
+})
+
+export default function NewBookingDrawer({ onClose, onSaved, booking }: {
   onClose: () => void
-  onCreated: (guestName: string) => void
+  onSaved: (guestName: string) => void
+  /** Présente : le tiroir modifie cette réservation au lieu d'en créer une. */
+  booking?: EditableBooking
 }) {
-  const [form, setForm] = useState(emptyForm)
+  const editing = Boolean(booking)
+  const [form, setForm] = useState(booking ? asForm(booking) : emptyForm)
   const [rooms, setRooms] = useState<RoomOption[]>([])
   const [free, setFree] = useState<number | null>(null)
   const [checking, setChecking] = useState(false)
@@ -67,7 +102,11 @@ export default function NewBookingDrawer({ onClose, onCreated }: {
 
     let cancelled = false
     setChecking(true)
-    adminApi.availability(checkIn, checkOut).then((response) => {
+    // En modification, la réservation ne doit pas se compter elle-même : sinon
+    // corriger le nom d'un client afficherait « complet » parce que ses propres
+    // unités occupent la période. Le serveur applique la même règle avant
+    // d'enregistrer, donc l'écran et la décision ne peuvent pas diverger.
+    adminApi.availability(checkIn, checkOut, booking?.id).then((response) => {
       if (cancelled) return
       setChecking(false)
       const room = response.data?.rooms.find((entry) => entry.roomId === roomId)
@@ -75,7 +114,7 @@ export default function NewBookingDrawer({ onClose, onCreated }: {
     })
 
     return () => { cancelled = true }
-  }, [form.roomId, form.checkIn, form.checkOut])
+  }, [form.roomId, form.checkIn, form.checkOut, booking?.id])
 
   function set(key: keyof typeof emptyForm, value: string) {
     setForm((current) => ({ ...current, [key]: value }))
@@ -89,7 +128,7 @@ export default function NewBookingDrawer({ onClose, onCreated }: {
     setSaving(true)
     setError('')
 
-    const response = await adminApi.create('/admin/bookings', {
+    const payload = {
       guestName: form.guestName.trim(),
       guestEmail: form.guestEmail.trim(),
       guestPhone: form.guestPhone.trim(),
@@ -100,21 +139,25 @@ export default function NewBookingDrawer({ onClose, onCreated }: {
       adults: Number(form.adults),
       children: Number(form.children),
       status: form.status,
-    })
+    }
+
+    const response = booking
+      ? await adminApi.update(`/admin/bookings/${booking.id}`, payload)
+      : await adminApi.create('/admin/bookings', payload)
     setSaving(false)
 
     if (response.error) {
       setError(explain(response.error))
       return
     }
-    onCreated(form.guestName.trim())
+    onSaved(form.guestName.trim())
   }
 
   const requested = Number(form.rooms || 1)
   const enough = free === null || free >= requested
 
   return (
-    <Drawer title="Nouvelle réservation" onClose={onClose} footer={
+    <Drawer title={editing ? 'Modifier la réservation' : 'Nouvelle réservation'} onClose={onClose} footer={
       <div className="flex gap-2">
         <Button variant="gold" disabled={saving} onClick={() => void submit()}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}
@@ -180,6 +223,8 @@ export default function NewBookingDrawer({ onClose, onCreated }: {
             className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500">
             <option value="confirmed">Confirmée</option>
             <option value="pending">En attente</option>
+            {/* Une réservation ne s'annule qu'une fois créée. */}
+            {editing && <option value="cancelled">Annulée</option>}
           </select>
         </label>
 

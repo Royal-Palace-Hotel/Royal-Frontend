@@ -25,6 +25,20 @@ export default function Rooms() {
   const requestedRooms = searchParams.get('rooms')
   const english = i18n.resolvedLanguage?.startsWith('en')
 
+  /**
+   * Vue et literie, dans l'ordre : ce qui est saisi au back-office, sinon la
+   * traduction livrée pour les quatre chambres d'origine, sinon un tiret.
+   *
+   * Le dernier repli n'est pas décoratif : `t()` renvoie la clé elle-même
+   * quand elle n'existe pas. Sans lui, une chambre créée au back-office
+   * affichait « roomsData.<clé>.view » au visiteur.
+   */
+  const detail = (room: Room, field: 'view' | 'bedType') => {
+    const saved = english ? room[`${field}En` as const] : room[field]
+    if (saved) return saved
+    return t(`roomsData.${room.translationKey}.${field}`, { defaultValue: '' }) || '—'
+  }
+
   useEffect(() => {
     async function fetchRooms() {
       const response = await api.getRooms()
@@ -165,13 +179,13 @@ export default function Rooms() {
               <tr>
                 <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.view')}</td>
                 {rooms.map((r) => (
-                  <td key={r.id} className="px-6 py-4">{t(`roomsData.${r.translationKey}.view`)}</td>
+                  <td key={r.id} className="px-6 py-4">{detail(r, 'view')}</td>
                 ))}
               </tr>
               <tr className="bg-cream/50">
                 <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.bedType')}</td>
                 {rooms.map((r) => (
-                  <td key={r.id} className="px-6 py-4">{t(`roomsData.${r.translationKey}.bedType`)}</td>
+                  <td key={r.id} className="px-6 py-4">{detail(r, 'bedType')}</td>
                 ))}
               </tr>
               <tr>

@@ -24,9 +24,22 @@ export default function Hero() {
     <section className="relative h-[75vh] min-h-[560px] w-full">
       {/* Background image — seul ce conteneur est clipé */}
       <div className="absolute inset-0 overflow-hidden">
+        {/*
+          Cette image est le plus gros élément du premier affichage : c'est elle
+          qui décide de la vitesse perçue du site. `fetchPriority="high"` la fait
+          passer devant le reste dans la file du navigateur, `width`/`height`
+          réservent sa place pour que la page ne saute pas quand elle arrive, et
+          `loading="eager"` interdit tout report. Un `<link rel="preload">` dans
+          index.html la lance avant même que React ne démarre.
+        */}
         <img
           src="/images/hero/hero-building.jpg"
           alt="Royal Palace Antsirabe — façade de l'hôtel au crépuscule"
+          width={1382}
+          height={745}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-black/50" />

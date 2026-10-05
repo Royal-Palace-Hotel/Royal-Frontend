@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BedDouble, CalendarCheck2, Flower2, Images, LayoutDashboard, LogOut, Mail, MapPinned,
-  CalendarRange, Menu as MenuIcon, ScrollText, Send, ShieldCheck, UserCircle, UsersRound,
+  CalendarRange, Menu as MenuIcon, Sunrise, ScrollText, Send, ShieldCheck, UserCircle, UsersRound,
   Utensils, X,
 } from 'lucide-react'
 import { adminApi, AdminUser } from '@/utils/api'
@@ -11,13 +11,14 @@ import ResourceManager from '@/components/admin/ResourceManager'
 import { resources } from '@/components/admin/resources'
 import BookingsPanel from '@/components/admin/BookingsPanel'
 import AvailabilityPanel from '@/components/admin/AvailabilityPanel'
+import DayPanel from '@/components/admin/DayPanel'
 import MessagesPanel from '@/components/admin/MessagesPanel'
 import SubscribersPanel from '@/components/admin/SubscribersPanel'
 import UsersPanel from '@/components/admin/UsersPanel'
 import { AccountPanel, AuditPanel } from '@/components/admin/AccountPanel'
 
 type Section =
-  | 'overview' | 'bookings' | 'availability' | 'room-blocks' | 'contact-messages' | 'subscribers'
+  | 'overview' | 'day' | 'bookings' | 'availability' | 'room-blocks' | 'contact-messages' | 'subscribers'
   | 'rooms' | 'menu-sections' | 'menu-items' | 'event-rooms' | 'spa' | 'gallery' | 'discover'
   | 'users' | 'audit' | 'account'
 
@@ -34,6 +35,7 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
     title: 'Pilotage',
     items: [
       { key: 'overview', label: 'Vue d’ensemble', icon: LayoutDashboard },
+      { key: 'day', label: 'Journée', icon: Sunrise },
       { key: 'bookings', label: 'Réservations', icon: CalendarCheck2 },
       { key: 'availability', label: 'Disponibilité', icon: CalendarRange },
       { key: 'room-blocks', label: 'Périodes bloquées', icon: CalendarRange },
@@ -65,6 +67,7 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
 
 const TITLES: Record<Section, string> = {
   overview: 'Vue d’ensemble',
+  day: 'La journée à la réception',
   bookings: 'Réservations',
   availability: 'Disponibilité des chambres',
   'room-blocks': 'Périodes bloquées',
@@ -134,6 +137,7 @@ export default function AdminDashboard() {
     if (resources[active]) return <ResourceManager key={active} spec={resources[active]} />
     switch (active) {
       case 'overview': return <Overview onOpenSection={go} />
+      case 'day': return <DayPanel />
       case 'bookings': return <BookingsPanel />
       case 'availability': return <AvailabilityPanel />
       case 'contact-messages': return <MessagesPanel />

@@ -24,4 +24,19 @@ i18n
     },
   })
 
+/**
+ * `<html lang>` doit suivre la langue affichée.
+ *
+ * Il était figé à `fr` dans index.html : un visiteur lisant la version anglaise
+ * recevait une page déclarée française, ce que les lecteurs d'écran prennent au
+ * mot (mauvaise prononciation) et que les moteurs de recherche indexent de
+ * travers.
+ */
+const syncDocumentLanguage = (language: string) => {
+  document.documentElement.lang = language.startsWith('en') ? 'en' : 'fr'
+}
+
+syncDocumentLanguage(i18n.resolvedLanguage || 'fr')
+i18n.on('languageChanged', syncDocumentLanguage)
+
 export default i18n
