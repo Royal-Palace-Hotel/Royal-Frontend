@@ -33,6 +33,48 @@ const discoverFallback = {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
 
+/** Réponse de `POST /bookings/availability`. */
+export interface AvailabilityResult {
+  available: boolean
+  availableRooms: number
+  requestedRooms: number
+  totalRooms: number
+  bookedRooms: number
+  blockedRooms: number
+  /** Faux quand la chambre est libre mais trop petite pour le groupe. */
+  fitsParty: boolean
+  maxGuests?: number
+  roomId?: string
+}
+
+export interface AvailabilityDay {
+  date: string
+  free: number
+  /** Détaillé seulement côté back-office. */
+  total?: number
+  booked?: number
+  blocked?: number
+}
+
+export interface RoomAvailability {
+  roomId: string
+  slug: string
+  name: string | null
+  nameEn: string | null
+  totalUnits: number
+  days: AvailabilityDay[]
+}
+
+export interface RoomBlock {
+  id: string
+  roomId: string
+  roomName: string | null
+  startDate: string
+  endDate: string
+  units: number
+  reason: string | null
+}
+
 export interface PageMeta {
   page: number
   perPage: number
@@ -114,10 +156,19 @@ export const api = {
     checkOut: string
     rooms: number
     roomId?: string
-  }) => request<any>('/bookings/availability', {
+    adults?: number
+    children?: number
+  }) => request<AvailabilityResult>('/bookings/availability', {
     method: 'POST',
     body: JSON.stringify(data),
   }),
+
+  /**
+   * Disponibilité jour par jour, toutes chambres confondues : un seul appel
+   * remplace une vérification par chambre.
+   */
+  getAvailabilityCalendar: (from: string, to: string) =>
+    request<RoomAvailability[]>(`/content/availability?from=${from}&to=${to}`),
 
   createBooking: (data: {
     guestName: string
@@ -282,6 +333,19 @@ export const adminApi = {
   ),
   me: () => adminRequest<{ user: AdminUser }>('/auth/me'),
   get: <T>(endpoint: string) => adminRequest<T>(endpoint),
+  /** Tableau de disponibilité : calendrier détaillé + périodes bloquées de la fenêtre. */
+  availability: (from: string, to: string) => adminRequest<{
+    from: string
+    to: string
+    rooms: RoomAvailability[]
+    blocks: RoomBlock[]
+  }>(`/admin/availability?from=${from}&to=${to}`),
+
+  /** La traduction FR → EN est facultative côté serveur : à demander avant de la proposer. */
+  translationStatus: () => adminRequest<{ enabled: boolean }>('/admin/translate'),
+  translate: (texts: string[]) => adminRequest<{ translations: string[] }>(
+    '/admin/translate', { method: 'POST', body: JSON.stringify({ texts }) }
+  ),
   create: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'POST', body: JSON.stringify(data) }),
   update: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) }),
   patch: <T>(endpoint: string, data: unknown) => adminRequest<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) }),

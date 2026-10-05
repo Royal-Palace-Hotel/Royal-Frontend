@@ -301,6 +301,17 @@ const fr = {
     confirmButton: 'Confirmer la réservation',
     successMessage: 'Merci ! Votre demande de réservation a bien été envoyée.',
     errorMessage: 'Une erreur est survenue. Veuillez réessayer ou nous contacter directement.',
+    // Réponse de la barre de recherche, affichée au moment où on la demande.
+    searching: 'Vérification des disponibilités…',
+    searchAvailable_one: 'Il reste {{count}} chambre pour ces dates.',
+    searchAvailable_other: 'Il reste {{count}} chambres pour ces dates.',
+    searchFull: 'Complet pour ces dates. Essayez d’autres dates ou appelez-nous.',
+    searchFailed: 'Disponibilités indisponibles pour l’instant. Les chambres restent consultables ci-dessous.',
+    // Raisons de refus renvoyées par le serveur au moment de réserver.
+    unavailableForDates: 'Ces dates ne sont plus disponibles pour cette chambre.',
+    onlyLeft_one: 'Il ne reste qu’une chambre sur ces dates : réduisez le nombre de chambres ou changez de dates.',
+    onlyLeft_other: 'Il ne reste que {{count}} chambres sur ces dates : réduisez le nombre de chambres ou changez de dates.',
+    tooManyGuests: 'Cette chambre ne peut pas accueillir autant de voyageurs. Choisissez-en une plus grande ou ajoutez une chambre.',
   },
 }
 

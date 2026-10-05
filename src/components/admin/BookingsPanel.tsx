@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Phone, Plus } from 'lucide-react'
 import { adminApi, downloadCsv, PageMeta, queryString } from '@/utils/api'
+import NewBookingDrawer from './NewBookingDrawer'
 import {
   BOOKING_STATUS, Button, Card, Drawer, EmptyState, ErrorBanner, Field, Notice, Pagination,
   SearchInput, Select, Spinner, StatusBadge, Toolbar,
@@ -54,6 +55,7 @@ export default function BookingsPanel() {
   const [sort, setSort] = useState('createdAt')
   const [page, setPage] = useState(1)
   const [detail, setDetail] = useState<any>(null)
+  const [creating, setCreating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -119,7 +121,12 @@ export default function BookingsPanel() {
         <Select label="Filtrer par statut" value={status}
           onChange={(value) => { setStatus(value); setPage(1) }} options={STATUS_OPTIONS} />
         <Select label="Trier" value={sort} onChange={setSort} options={SORT_OPTIONS} />
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button variant="gold" onClick={() => setCreating(true)}>
+            <span className="inline-flex items-center gap-2">
+              <Plus size={15} aria-hidden="true" /> Nouvelle réservation
+            </span>
+          </Button>
           <Button onClick={exportCsv}>
             <span className="inline-flex items-center gap-2"><Download size={15} aria-hidden="true" /> Exporter en CSV</span>
           </Button>
@@ -149,7 +156,15 @@ export default function BookingsPanel() {
                         className="text-left font-medium text-charcoal hover:text-gold-700 hover:underline">
                         {row.guestName}
                       </button>
-                      <p className="text-xs text-gray-500">{row.guestEmail}</p>
+                      <p className="text-xs text-gray-500">
+                        {row.guestEmail || row.guestPhone || '—'}
+                      </p>
+                      {row.source === 'admin' && (
+                        <span title="Saisie au back-office"
+                          className="mt-1 inline-flex items-center gap-1 bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-600">
+                          <Phone size={11} aria-hidden="true" /> Hors site
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{row.roomName || '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-600">
@@ -178,6 +193,17 @@ export default function BookingsPanel() {
         <Pagination meta={meta} onPage={setPage} />
       </Card>
 
+      {creating && (
+        <NewBookingDrawer
+          onClose={() => setCreating(false)}
+          onCreated={(guestName) => {
+            setCreating(false)
+            setNotice(`Réservation enregistrée pour ${guestName}.`)
+            void load()
+          }}
+        />
+      )}
+
       {detail && (
         <Drawer title="Détail de la réservation" onClose={() => setDetail(null)} footer={
           <div className="flex flex-wrap gap-2">
@@ -190,7 +216,12 @@ export default function BookingsPanel() {
           <dl className="divide-y divide-gray-100">
             <Field label="Client">{detail.guestName}</Field>
             <Field label="E-mail">
-              <a href={`mailto:${detail.guestEmail}`} className="text-gold-700 hover:underline">{detail.guestEmail}</a>
+              {detail.guestEmail
+                ? <a href={`mailto:${detail.guestEmail}`} className="text-gold-700 hover:underline">{detail.guestEmail}</a>
+                : <span className="text-gray-400">Non renseigné</span>}
+            </Field>
+            <Field label="Origine">
+              {detail.source === 'admin' ? 'Saisie au back-office' : 'Site web'}
             </Field>
             <Field label="Téléphone">
               {detail.guestPhone

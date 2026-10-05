@@ -301,6 +301,17 @@ const en = {
     confirmButton: 'Confirm booking',
     successMessage: 'Thank you! Your booking request has been sent.',
     errorMessage: 'An error occurred. Please try again or contact us directly.',
+    // Search bar feedback, shown the moment availability is asked for.
+    searching: 'Checking availability…',
+    searchAvailable_one: '{{count}} room left for these dates.',
+    searchAvailable_other: '{{count}} rooms left for these dates.',
+    searchFull: 'Fully booked for these dates. Try other dates or give us a call.',
+    searchFailed: 'Availability is unreachable right now. The rooms below are still listed.',
+    // Reasons the server gives when a booking is refused.
+    unavailableForDates: 'These dates are no longer available for this room.',
+    onlyLeft_one: 'Only one room is left for these dates — book fewer rooms or pick other dates.',
+    onlyLeft_other: 'Only {{count}} rooms are left for these dates — book fewer rooms or pick other dates.',
+    tooManyGuests: 'This room cannot host that many guests. Pick a larger one or add a room.',
   },
 }
 
