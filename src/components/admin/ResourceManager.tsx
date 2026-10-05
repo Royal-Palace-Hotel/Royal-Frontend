@@ -1,13 +1,15 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Languages } from 'lucide-react'
 import { adminApi } from '@/utils/api'
 import { Button, Card, EmptyState, ErrorBanner, Notice, Spinner } from './ui'
 import { ImageField, ImageListField } from './ImageField'
+import { useTranslator } from './useTranslator'
 
 export interface FieldSpec {
   key: string
   label: string
   /** `image` : une pièce jointe. `imageList` : plusieurs, ordonnées. */
-  type?: 'text' | 'number' | 'textarea' | 'select' | 'checkbox' | 'list' | 'image' | 'imageList'
+  type?: 'text' | 'number' | 'date' | 'textarea' | 'select' | 'checkbox' | 'list' | 'image' | 'imageList'
   options?: Array<{ value: string; label: string }>
   /** Options chargées depuis un autre endpoint (ex. sections de la carte). */
   optionsFrom?: { endpoint: string; value: string; label: string }
@@ -15,6 +17,13 @@ export interface FieldSpec {
   help?: string
   /** Envoyer `null` plutôt qu'une chaîne vide (colonnes nullable). */
   nullWhenEmpty?: boolean
+  /**
+   * Champ anglais : clé du champ français dont il est la traduction. Il se
+   * remplit alors tout seul quand on quitte le champ source (s'il est encore
+   * vide) et reçoit un bouton « Traduire ». Il reste un champ comme les autres :
+   * la proposition est modifiable, et c'est la valeur affichée qui est envoyée.
+   */
+  translateFrom?: string
 }
 
 export interface ResourceSpec {
@@ -44,6 +53,41 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const translator = useTranslator()
+
+  /**
+   * Dernier texte français traduit pour chaque champ anglais. Traverser un champ
+   * sans le modifier ne doit pas relancer un appel, et vider la traduction à la
+   * main ne doit pas la faire revenir au prochain passage.
+   */
+  const lastTranslated = useRef<Record<string, string>>({})
+
+  /**
+   * Traductions obtenues et pas encore retouchées à la main, et appels encore en
+   * vol. `save` s'appuie sur les deux : cliquer « Ajouter » juste après avoir
+   * saisi le français déclenche la traduction (au `blur`) et l'envoi dans le même
+   * mouvement, et la valeur n'est pas encore revenue dans l'état du formulaire.
+   */
+  const translated = useRef<Record<string, string>>({})
+  const inFlight = useRef(new Set<Promise<unknown>>())
+
+  function track(work: Promise<unknown>) {
+    // Neutralisé : une traduction qui échoue ne doit pas faire échouer le
+    // `Promise.all` de l'enregistrement.
+    const settled = work.catch(() => undefined)
+    inFlight.current.add(settled)
+    void settled.finally(() => inFlight.current.delete(settled))
+  }
+
+  /** Champs anglais regroupés par champ source. */
+  const translationTargets = useMemo(() => {
+    const targets = new Map<string, FieldSpec[]>()
+    for (const field of spec.fields) {
+      if (!field.translateFrom) continue
+      targets.set(field.translateFrom, [...(targets.get(field.translateFrom) ?? []), field])
+    }
+    return targets
+  }, [spec])
 
   const emptyForm = useMemo(() => {
     const base: Record<string, string> = {}
@@ -93,11 +137,17 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
     return field.options ?? remoteOptions[field.key] ?? []
   }
 
+  function resetTranslations() {
+    lastTranslated.current = {}
+    translated.current = {}
+  }
+
   function beginCreate() {
     setEditingId(null)
     setForm(emptyForm)
     setFormOpen(true)
     setError('')
+    resetTranslations()
   }
 
   function beginEdit(row: any) {
@@ -107,12 +157,59 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
     setForm(next)
     setFormOpen(true)
     setError('')
+    resetTranslations()
   }
 
-  function payload() {
+  /**
+   * Appelé quand on quitte un champ français : complète les champs anglais
+   * encore vides. On ne remplace jamais une valeur déjà présente — une
+   * traduction corrigée à la main doit survivre à un retour sur le champ
+   * français. Le bouton « Retraduire » couvre le remplacement voulu.
+   */
+  async function fillTranslations(sourceKey: string) {
+    const targets = translationTargets.get(sourceKey)
+    if (!targets || !translator.enabled) return
+
+    const source = (form[sourceKey] ?? '').trim()
+    if (!source) return
+
+    for (const target of targets) {
+      if ((form[target.key] ?? '').trim()) continue
+      if (lastTranslated.current[target.key] === source) continue
+      lastTranslated.current[target.key] = source
+
+      const text = await translator.translate(target.key, source)
+      if (!text) continue
+      translated.current[target.key] = text
+      // Le champ a pu être rempli pendant l'appel : on relit l'état courant
+      // plutôt que la copie capturée au moment du clic.
+      setForm(current => (current[target.key] ?? '').trim()
+        ? current
+        : { ...current, [target.key]: text })
+    }
+  }
+
+  /** Bouton « Traduire » : remplacement explicite, donc sans ménagement. */
+  async function translateField(field: FieldSpec) {
+    const source = (form[field.translateFrom!] ?? '').trim()
+    if (!source) return
+    lastTranslated.current[field.key] = source
+    const text = await translator.translate(field.key, source)
+    if (!text) return
+    translated.current[field.key] = text
+    setForm(current => ({ ...current, [field.key]: text }))
+  }
+
+  /** Saisir dans un champ traduit en reprend la main : plus de rattrapage dessus. */
+  function editField(field: FieldSpec, value: string) {
+    if (field.translateFrom) delete translated.current[field.key]
+    setForm({ ...form, [field.key]: value })
+  }
+
+  function payload(values: Record<string, string>) {
     const result: Record<string, unknown> = {}
     for (const field of spec.fields) {
-      const raw = form[field.key] ?? ''
+      const raw = values[field.key] ?? ''
 
       if (field.type === 'list' || field.type === 'imageList') {
         result[field.key] = raw.split('\n').map((line) => line.trim()).filter(Boolean)
@@ -144,9 +241,19 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
     event.preventDefault()
     setSaving(true)
     setError('')
+
+    // Quitter le dernier champ français et cliquer « Ajouter » ne font qu'un
+    // geste : on laisse la traduction arriver, puis on reprend les propositions
+    // encore absentes de l'état du formulaire (React n'a pas forcément réaffiché).
+    await Promise.all([...inFlight.current])
+    const values = { ...form }
+    for (const [key, text] of Object.entries(translated.current)) {
+      if (!(values[key] ?? '').trim()) values[key] = text
+    }
+
     const response = editingId
-      ? await adminApi.update(`${spec.endpoint}/${editingId}`, payload())
-      : await adminApi.create(spec.endpoint, payload())
+      ? await adminApi.update(`${spec.endpoint}/${editingId}`, payload(values))
+      : await adminApi.create(spec.endpoint, payload(values))
     setSaving(false)
 
     if (response.error) {
@@ -157,6 +264,7 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
     setForm({})
     setEditingId(null)
     setFormOpen(false)
+    resetTranslations()
     await load()
   }
 
@@ -227,10 +335,24 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
               </Button>
             </div>
 
+            {translator.enabled && translationTargets.size > 0 && (
+              <p className="flex items-start gap-2 border border-gold-200 bg-gold-50 px-3 py-2 text-xs text-gray-600">
+                <Languages className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold-700" aria-hidden="true" />
+                <span>
+                  Les champs « (EN) » se remplissent d’après le français dès que vous quittez
+                  le champ. La proposition reste modifiable : corrigez-la avant d’enregistrer.
+                </span>
+              </p>
+            )}
+
             {spec.fields.map((field) => {
               const value = form[field.key] ?? ''
               const required = !field.optional && field.type !== 'checkbox'
               const id = `field-${field.key}`
+              // Quitter un champ source complète sa traduction restée vide.
+              const onBlur = translationTargets.has(field.key)
+                ? () => track(fillTranslations(field.key))
+                : undefined
 
               if (field.type === 'image') {
                 return (
@@ -257,6 +379,33 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
                 )
               }
 
+              // Le contrôle vit hors du `<label>` : la ligne de titre doit pouvoir
+              // accueillir le bouton « Traduire » à droite. L'association reste
+              // explicite par `htmlFor` / `id`.
+              const control = field.type === 'select' || field.optionsFrom ? (
+                <select id={id} value={value} required={required}
+                  onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                  className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500">
+                  <option value="">Choisir…</option>
+                  {optionsFor(field).map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              ) : field.type === 'textarea' || field.type === 'list' ? (
+                <textarea id={id} rows={field.type === 'list' ? 4 : 3} value={value} required={required}
+                  onChange={(event) => editField(field, event.target.value)}
+                  onBlur={onBlur}
+                  className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500" />
+              ) : (
+                <input id={id} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
+                  min={field.type === 'number' ? 0 : undefined}
+                  step={field.type === 'number' ? 'any' : undefined}
+                  value={value} required={required}
+                  onChange={(event) => editField(field, event.target.value)}
+                  onBlur={onBlur}
+                  className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500" />
+              )
+
               return (
                 <div key={field.key}>
                   {field.type === 'checkbox' ? (
@@ -267,34 +416,30 @@ export default function ResourceManager({ spec }: { spec: ResourceSpec }) {
                       {field.label}
                     </label>
                   ) : (
-                    <label htmlFor={id} className="block text-sm text-gray-700">
-                      {field.label}
-                      {field.optional && <span className="ml-1 text-xs text-gray-400">(facultatif)</span>}
-
-                      {field.type === 'select' || field.optionsFrom ? (
-                        <select id={id} value={value} required={required}
-                          onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                          className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500">
-                          <option value="">Choisir…</option>
-                          {optionsFor(field).map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                      ) : field.type === 'textarea' || field.type === 'list' ? (
-                        <textarea id={id} rows={field.type === 'list' ? 4 : 3} value={value} required={required}
-                          onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                          className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500" />
-                      ) : (
-                        <input id={id} type={field.type === 'number' ? 'number' : 'text'}
-                          min={field.type === 'number' ? 0 : undefined}
-                          step={field.type === 'number' ? 'any' : undefined}
-                          value={value} required={required}
-                          onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
-                          className="mt-1 w-full border border-gray-300 px-3 py-2 outline-none focus:border-gold-500" />
-                      )}
-                    </label>
+                    <>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <label htmlFor={id} className="block text-sm text-gray-700">
+                          {field.label}
+                          {field.optional && <span className="ml-1 text-xs text-gray-400">(facultatif)</span>}
+                        </label>
+                        {field.translateFrom && translator.enabled && (
+                          <button type="button" onClick={() => void translateField(field)}
+                            disabled={translator.busy[field.key] || !(form[field.translateFrom] ?? '').trim()}
+                            className="flex shrink-0 items-center gap-1 text-xs text-gold-700 hover:underline disabled:text-gray-400 disabled:no-underline">
+                            <Languages className="h-3.5 w-3.5" aria-hidden="true" />
+                            {translator.busy[field.key]
+                              ? 'Traduction…'
+                              : value.trim() ? 'Retraduire' : 'Traduire'}
+                          </button>
+                        )}
+                      </div>
+                      {control}
+                    </>
                   )}
                   {field.help && <p className="mt-1 text-xs text-gray-500">{field.help}</p>}
+                  {translator.errors[field.key] && (
+                    <p className="mt-1 text-xs text-red-600">{translator.errors[field.key]}</p>
+                  )}
                 </div>
               )
             })}

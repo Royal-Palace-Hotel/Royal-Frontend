@@ -18,6 +18,7 @@ export default function BookingReservationForm() {
   const [status, setStatus] = useState<Status>('idle')
   const [errors, setErrors] = useState<ReservationFormErrors>({})
   const [form, setForm] = useState<ReservationFormData>({ name: '', email: '', phone: '' })
+  const [reason, setReason] = useState('')
 
   function update<K extends keyof ReservationFormData>(key: K, value: string) {
     setForm((previous) => ({ ...previous, [key]: value }))
@@ -32,11 +33,28 @@ export default function BookingReservationForm() {
     return Object.keys(next).length === 0
   }
 
+  /**
+   * Traduit le refus du serveur en une phrase utile.
+   *
+   * L'API répond en anglais et de façon technique (« Only 2 room(s) available
+   * for the selected dates »). Afficher ce message tel quel, ou le remplacer par
+   * un « une erreur est survenue » générique, laisse le visiteur sans la seule
+   * information qui compte : ce qu'il peut changer pour que ça passe.
+   */
+  function explain(error: string): string {
+    const left = error.match(/Only (\d+) room/i)
+    if (left) return t('booking.onlyLeft', { count: Number(left[1]) })
+    if (/No rooms available/i.test(error)) return t('booking.unavailableForDates')
+    if (/accueille|accommodate/i.test(error)) return t('booking.tooManyGuests')
+    return t('booking.errorMessage')
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!validate()) return
 
     setStatus('sending')
+    setReason('')
     try {
       const result = await api.createBooking({
         guestName: form.name.trim(),
@@ -51,12 +69,14 @@ export default function BookingReservationForm() {
       })
 
       if (result.error) {
+        setReason(explain(result.error))
         setStatus('error')
       } else {
         setStatus('success')
         setForm({ name: '', email: '', phone: '' })
       }
     } catch {
+      setReason(t('booking.errorMessage'))
       setStatus('error')
     }
   }
@@ -138,8 +158,10 @@ export default function BookingReservationForm() {
         </div>
       )}
       {status === 'error' && (
-        <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded text-sm">
-          <AlertCircle size={18} /> {t('booking.errorMessage')}
+        <div role="alert"
+          className="flex items-start gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded text-sm">
+          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+          <span>{reason || t('booking.errorMessage')}</span>
         </div>
       )}
     </form>

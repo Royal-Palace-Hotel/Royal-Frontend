@@ -2,20 +2,22 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BedDouble, CalendarCheck2, Flower2, Images, LayoutDashboard, LogOut, Mail, MapPinned,
-  Menu as MenuIcon, ScrollText, Send, ShieldCheck, UserCircle, UsersRound, Utensils, X,
+  CalendarRange, Menu as MenuIcon, ScrollText, Send, ShieldCheck, UserCircle, UsersRound,
+  Utensils, X,
 } from 'lucide-react'
 import { adminApi, AdminUser } from '@/utils/api'
 import Overview from '@/components/admin/Overview'
 import ResourceManager from '@/components/admin/ResourceManager'
 import { resources } from '@/components/admin/resources'
 import BookingsPanel from '@/components/admin/BookingsPanel'
+import AvailabilityPanel from '@/components/admin/AvailabilityPanel'
 import MessagesPanel from '@/components/admin/MessagesPanel'
 import SubscribersPanel from '@/components/admin/SubscribersPanel'
 import UsersPanel from '@/components/admin/UsersPanel'
 import { AccountPanel, AuditPanel } from '@/components/admin/AccountPanel'
 
 type Section =
-  | 'overview' | 'bookings' | 'contact-messages' | 'subscribers'
+  | 'overview' | 'bookings' | 'availability' | 'room-blocks' | 'contact-messages' | 'subscribers'
   | 'rooms' | 'menu-sections' | 'menu-items' | 'event-rooms' | 'spa' | 'gallery' | 'discover'
   | 'users' | 'audit' | 'account'
 
@@ -33,6 +35,8 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { key: 'overview', label: 'Vue d’ensemble', icon: LayoutDashboard },
       { key: 'bookings', label: 'Réservations', icon: CalendarCheck2 },
+      { key: 'availability', label: 'Disponibilité', icon: CalendarRange },
+      { key: 'room-blocks', label: 'Périodes bloquées', icon: CalendarRange },
       { key: 'contact-messages', label: 'Messages', icon: Mail },
       { key: 'subscribers', label: 'Newsletter', icon: Send },
     ],
@@ -62,6 +66,8 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
 const TITLES: Record<Section, string> = {
   overview: 'Vue d’ensemble',
   bookings: 'Réservations',
+  availability: 'Disponibilité des chambres',
+  'room-blocks': 'Périodes bloquées',
   'contact-messages': 'Messages',
   subscribers: 'Abonnés à la newsletter',
   rooms: 'Chambres',
@@ -129,6 +135,7 @@ export default function AdminDashboard() {
     switch (active) {
       case 'overview': return <Overview onOpenSection={go} />
       case 'bookings': return <BookingsPanel />
+      case 'availability': return <AvailabilityPanel />
       case 'contact-messages': return <MessagesPanel />
       case 'subscribers': return <SubscribersPanel />
       case 'users': return <UsersPanel currentUser={user} />

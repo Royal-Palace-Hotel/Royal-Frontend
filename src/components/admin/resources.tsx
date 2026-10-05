@@ -27,9 +27,9 @@ export const resources: Record<string, ResourceSpec> = {
       { key: 'slug', label: 'Identifiant d’URL (slug)', help: 'Minuscules et tirets, ex. suite-royale.' },
       { key: 'translationKey', label: 'Clé de traduction', optional: true },
       { key: 'name', label: 'Nom (FR)' },
-      { key: 'nameEn', label: 'Nom (EN)' },
+      { key: 'nameEn', label: 'Nom (EN)', translateFrom: 'name' },
       { key: 'description', label: 'Description (FR)', type: 'textarea' },
-      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea' },
+      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea', translateFrom: 'description' },
       { key: 'price', label: 'Prix par nuit', type: 'number' },
       { key: 'currency', label: 'Devise' },
       { key: 'size', label: 'Superficie (m²)', type: 'number' },
@@ -47,13 +47,45 @@ export const resources: Record<string, ResourceSpec> = {
     ],
   },
 
+  'room-blocks': {
+    endpoint: '/admin/room-blocks',
+    title: 'Périodes bloquées',
+    addLabel: 'Bloquer une période',
+    fields: [
+      {
+        key: 'roomId', label: 'Chambre',
+        optionsFrom: { endpoint: '/admin/rooms', value: 'id', label: 'name' },
+      },
+      { key: 'startDate', label: 'Du', type: 'date' },
+      {
+        key: 'endDate', label: 'Au (exclu)', type: 'date',
+        help: 'Le jour de fin reste disponible, comme un jour de départ : bloquer du 12 au 15 occupe les nuits du 12, 13 et 14.',
+      },
+      {
+        key: 'units', label: 'Unités bloquées', type: 'number',
+        help: 'Ne peut pas dépasser le nombre d’unités de la catégorie.',
+      },
+      {
+        key: 'reason', label: 'Motif', optional: true, nullWhenEmpty: true,
+        help: 'Travaux, fermeture, réservation reçue par téléphone…',
+      },
+    ],
+    defaults: { units: '1' },
+    columns: [
+      { label: 'Chambre', value: (row) => row.roomName || row.roomId },
+      { label: 'Période', value: (row) => `${row.startDate} → ${row.endDate}` },
+      { label: 'Unités', value: (row) => row.units },
+      { label: 'Motif', value: (row) => row.reason || '—' },
+    ],
+  },
+
   'menu-sections': {
     endpoint: '/admin/menu/sections',
     title: 'Sections de la carte',
     addLabel: 'Ajouter une section',
     fields: [
       { key: 'title', label: 'Nom de section (FR)' },
-      { key: 'titleEn', label: 'Nom de section (EN)' },
+      { key: 'titleEn', label: 'Nom de section (EN)', translateFrom: 'title' },
       { key: 'sortOrder', label: 'Ordre d’affichage', type: 'number' },
     ],
     columns: [
@@ -69,9 +101,9 @@ export const resources: Record<string, ResourceSpec> = {
     addLabel: 'Ajouter un plat',
     fields: [
       { key: 'name', label: 'Nom (FR)' },
-      { key: 'nameEn', label: 'Nom (EN)' },
+      { key: 'nameEn', label: 'Nom (EN)', translateFrom: 'name' },
       { key: 'description', label: 'Description (FR)', type: 'textarea' },
-      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea' },
+      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea', translateFrom: 'description' },
       { key: 'price', label: 'Prix (Ar)', type: 'number' },
       {
         key: 'sectionId', label: 'Section',
@@ -94,9 +126,9 @@ export const resources: Record<string, ResourceSpec> = {
     fields: [
       { key: 'key', label: 'Clé de traduction', optional: true },
       { key: 'name', label: 'Nom (FR)' },
-      { key: 'nameEn', label: 'Nom (EN)' },
+      { key: 'nameEn', label: 'Nom (EN)', translateFrom: 'name' },
       { key: 'description', label: 'Description (FR)', type: 'textarea' },
-      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea' },
+      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea', translateFrom: 'description' },
       { key: 'image', label: 'Photo de la salle', type: 'image' },
       { key: 'capacity', label: 'Capacité', type: 'number', optional: true, nullWhenEmpty: true },
       { key: 'schedule', label: 'Horaires / disponibilité', optional: true, nullWhenEmpty: true },
@@ -118,11 +150,14 @@ export const resources: Record<string, ResourceSpec> = {
     addLabel: 'Ajouter un soin',
     fields: [
       { key: 'name', label: 'Nom du soin (FR)' },
-      { key: 'nameEn', label: 'Nom du soin (EN)' },
+      { key: 'nameEn', label: 'Nom du soin (EN)', translateFrom: 'name' },
       { key: 'duration', label: 'Durée (FR)', optional: true, nullWhenEmpty: true, help: 'ex. 60 minutes' },
-      { key: 'durationEn', label: 'Durée (EN)', optional: true, nullWhenEmpty: true },
+      { key: 'durationEn', label: 'Durée (EN)', optional: true, nullWhenEmpty: true, translateFrom: 'duration' },
       { key: 'description', label: 'Description (FR)', type: 'textarea', optional: true, nullWhenEmpty: true },
-      { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea', optional: true, nullWhenEmpty: true },
+      {
+        key: 'descriptionEn', label: 'Description (EN)', type: 'textarea',
+        optional: true, nullWhenEmpty: true, translateFrom: 'description',
+      },
       { key: 'price', label: 'Prix (Ar)', type: 'number' },
       { key: 'key', label: 'Clé de traduction', optional: true },
       { key: 'sortOrder', label: 'Ordre d’affichage', type: 'number' },
@@ -144,7 +179,7 @@ export const resources: Record<string, ResourceSpec> = {
     fields: [
       { key: 'src', label: 'Image', type: 'image' },
       { key: 'alt', label: 'Texte alternatif (FR)', help: 'Décrit l’image pour les lecteurs d’écran.' },
-      { key: 'altEn', label: 'Texte alternatif (EN)', optional: true, nullWhenEmpty: true },
+      { key: 'altEn', label: 'Texte alternatif (EN)', optional: true, nullWhenEmpty: true, translateFrom: 'alt' },
       { key: 'category', label: 'Catégorie', type: 'select', options: GALLERY_CATEGORIES },
       { key: 'sortOrder', label: 'Ordre d’affichage', type: 'number' },
     ],
@@ -176,9 +211,12 @@ export const resources: Record<string, ResourceSpec> = {
         ],
       },
       { key: 'title', label: 'Titre (FR)' },
-      { key: 'titleEn', label: 'Titre (EN)' },
+      { key: 'titleEn', label: 'Titre (EN)', translateFrom: 'title' },
       { key: 'text', label: 'Texte (FR)', type: 'textarea', optional: true, nullWhenEmpty: true },
-      { key: 'textEn', label: 'Texte (EN)', type: 'textarea', optional: true, nullWhenEmpty: true },
+      {
+        key: 'textEn', label: 'Texte (EN)', type: 'textarea',
+        optional: true, nullWhenEmpty: true, translateFrom: 'text',
+      },
       {
         key: 'icon', label: 'Icône', optional: true, nullWhenEmpty: true,
         help: 'Nom lucide-react : CarTaxiFront, Waves, Hammer, Droplets, MapPin…',

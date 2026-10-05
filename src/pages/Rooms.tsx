@@ -38,6 +38,11 @@ export default function Rooms() {
     fetchRooms()
   }, [])
 
+  /**
+   * Un seul appel pour toutes les chambres : le calendrier renvoie les unités
+   * libres par nuit, et la disponibilité d'un séjour est celle de sa pire nuit.
+   * On interrogeait auparavant l'API une fois par chambre.
+   */
   useEffect(() => {
     if (!checkIn || !checkOut) {
       setAvailability({})
@@ -51,23 +56,24 @@ export default function Rooms() {
     const roomCount = Number.isFinite(requestedCount) && requestedCount > 0 ? requestedCount : 1
 
     async function fetchAvailability() {
-      const results = await Promise.all(
-        rooms.map(async (room) => {
-          const response = await api.checkAvailability({ checkIn: startDate, checkOut: endDate, rooms: roomCount, roomId: room.id })
-          return response.error || !response.data ? null : [room.id, response.data] as const
-        })
-      )
+      const response = await api.getAvailabilityCalendar(startDate, endDate)
+      if (!active || response.error || !response.data) return
 
-      if (active) {
-        setAvailability(Object.fromEntries(results.filter((result): result is NonNullable<typeof result> => result !== null)))
+      const next: Record<string, { availableRooms: number; available: boolean }> = {}
+      for (const room of response.data) {
+        const free = room.days.length === 0 ? 0 : Math.min(...room.days.map((day) => day.free))
+        // Les cartes sont identifiées par le slug : c'est ce que l'API publique
+        // expose comme `id` d'une chambre.
+        next[room.slug] = { availableRooms: free, available: free >= roomCount }
       }
+      setAvailability(next)
     }
 
     fetchAvailability()
     return () => {
       active = false
     }
-  }, [rooms, checkIn, checkOut, requestedRooms])
+  }, [checkIn, checkOut, requestedRooms])
 
   if (loading) {
     return (
@@ -123,7 +129,7 @@ export default function Rooms() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-14">
           {rooms.map((room, idx) => (
             <AnimatedSection key={room.id} delay={idx * 0.08}>
-              <RoomCard room={room} featured={room.id === 'suite'} availability={availability[room.id]} />
+              <RoomCard room={room} featured={room.id === 'suite'} availability={availability[room.slug]} />
             </AnimatedSection>
           ))}
         </div>
