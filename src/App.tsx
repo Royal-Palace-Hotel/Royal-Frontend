@@ -10,6 +10,13 @@ import Events from '@/pages/Events'
 import Discover from '@/pages/Discover'
 import Contact from '@/pages/Contact'
 
+/**
+ * Le back-office est chargé à la demande.
+ *
+ * Tableau de bord, formulaires et panneaux ne servent qu'aux quelques
+ * personnes qui s'y connectent : les inclure dans le bundle principal ferait
+ * payer leur poids à tous les visiteurs du site.
+ */
 const AdminLogin = lazy(() => import('@/pages/AdminLogin'))
 const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'))
 
@@ -37,13 +44,11 @@ export default function App() {
       <ScrollToTop />
       {!adminArea && <Header />}
       {adminArea ? (
-        <Suspense
-          fallback={
-            <main className="grid min-h-screen place-items-center text-gray-600">
-              Chargement de l’administration…
-            </main>
-          }
-        >
+        <Suspense fallback={
+          <main className="grid min-h-screen place-items-center text-gray-600">
+            Chargement de l’administration…
+          </main>
+        }>
           <Routes>
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
@@ -52,14 +57,13 @@ export default function App() {
       ) : (
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/chambres-suites" element={<Rooms />} />
-            <Route path="/restaurant" element={<Restaurant />} />
-            <Route path="/piscine-bien-etre" element={<Spa />} />
-            <Route path="/reunions-evenements" element={<Events />} />
-            <Route path="/offre-sur-mesure" element={<Events />} />
-            <Route path="/decouvrir-antsirabe" element={<Discover />} />
-            <Route path="/contact" element={<Contact />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/chambres-suites" element={<Rooms />} />
+          <Route path="/restaurant" element={<Restaurant />} />
+          <Route path="/piscine-bien-etre" element={<Spa />} />
+          <Route path="/reunions-evenements" element={<Events />} />
+          <Route path="/decouvrir-antsirabe" element={<Discover />} />
+          <Route path="/contact" element={<Contact />} />
           </Routes>
         </main>
       )}

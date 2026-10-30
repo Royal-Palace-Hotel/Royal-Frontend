@@ -1,203 +1,215 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Plus, Minus, Check, ArrowRight } from 'lucide-react'
-import HeroBanner from '@/components/HeroBanner'
-import CtaBanner from '@/components/CtaBanner'
-
-interface RoomItem {
-  id: string
-  title: string
-  specs: string
-  size: string
-  bed: string
-  description: string
-  image: string
-  price: string
-  amenities: string[]
-}
-
-const accommodations: RoomItem[] = [
-  {
-    id: 'standard',
-    title: 'Chambres standard',
-    specs: 'X M2 / 1 LIT KING',
-    size: '24 m²',
-    bed: '1 Lit King size',
-    description:
-      'Chaleureuse et fonctionnelle, la Chambre Standard offre tout le confort nécessaire pour un séjour relaxant ou un déplacement professionnel à Antsirabe.',
-    image: '/images/imageOrigine/hotel-room-2021-08-26-17-52-59-utc.jpg',
-    price: '280 000 Ar / nuit',
-    amenities: ['Lit King Size haut de gamme', 'Wi-Fi haut débit gratuit', 'Salle de bain privative', 'Smart TV écran plat', 'Climatisation réversible'],
-  },
-  {
-    id: 'superieure',
-    title: 'Chambres supérieures',
-    specs: 'X M2 / 1 LIT KING',
-    size: '30 m²',
-    bed: '1 Lit King size',
-    description:
-      'Plus spacieuse et lumineuse, la Chambre Supérieure dispose d’un coin salon élégant et d’une vue apaisante sur la ville ou nos jardins.',
-    image: '/images/imageOrigine/bedroom-with-wooden-ceiling-2021-08-26-15-43-53-utc.jpg',
-    price: '380 000 Ar / nuit',
-    amenities: ['Lit King Size confort palace', 'Wi-Fi haut débit', 'Minibar & machine à café', 'Bureau de travail', 'Coffre-fort'],
-  },
-  {
-    id: 'deluxe',
-    title: 'Chambres Deluxe',
-    specs: 'X M2 / 1 LIT KING',
-    size: '38 m²',
-    bed: '1 Lit King size',
-    description:
-      'Un écrin de raffinement avec des boiseries artisanales de Madagascar, une salle de bain en marbre et un balcon privatif pour savourer le calme.',
-    image: '/images/imageOrigine/bed-setting-2021-08-28-22-29-35-utc.jpg',
-    price: '520 000 Ar / nuit',
-    amenities: ['Balcon privatif avec vue', 'Grande baignoire & douche pluie', 'Coin salon raffiné', 'Service en chambre 24/7', 'Machine Nespresso'],
-  },
-  {
-    id: 'suite',
-    title: 'Suites',
-    specs: 'X M2 / 1 LIT KING',
-    size: '56 m²',
-    bed: '1 Lit King size',
-    description:
-      'Composée d’une vaste chambre séparée et d’un salon de réception majestueux, la Suite Royale incarne l’apogée du luxe et de l’élégance hôtelière.',
-    image: '/images/imageOrigine/romantic-honeymoon-hotel-suite-2022-10-28-21-38-26-utc.jpg',
-    price: '850 000 Ar / nuit',
-    amenities: ['Salon de réception privé', 'Double balcon panoramique', 'Bain à remous privatif', 'Accueil VIP & fruits frais', 'Majordome dédié sur demande'],
-  },
-  {
-    id: 'appartement',
-    title: 'Appartements',
-    specs: 'X M2 / 2 LIT KING / KITCHENETTE / SALON',
-    size: '78 m²',
-    bed: '2 Lits King size',
-    description:
-      'L’espace idéal pour les séjours en famille ou de longue durée, équipé d’une kitchenette moderne tout équipée, d’un salon chaleureux et de deux chambres séparées.',
-    image: '/images/imageOrigine/stylish-interior-design-of-living-room-2022-12-07-04-20-46-utc-1.jpg',
-    price: '1 100 000 Ar / nuit',
-    amenities: ['Kitchenette moderne équipée', 'Grand salon familial', '2 chambres indépendantes', '2 salles de bain privatives', 'Espace repas convivial'],
-  },
-]
+import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
+import { Check } from 'lucide-react'
+import PageHero from '@/components/PageHero'
+import AnimatedSection from '@/components/AnimatedSection'
+import SectionHeading from '@/components/SectionHeading'
+import RoomCard from '@/components/RoomCard'
+import ImageGallery from '@/components/ImageGallery'
+import { api } from '@/utils/api'
+import { useGalleryImages } from '@/hooks/useGallery'
+import { formatCurrency } from '@/utils/helpers'
+import type { Room } from '@/types'
 
 export default function Rooms() {
-  const [openId, setOpenId] = useState<string | null>(null)
+  const { t, i18n } = useTranslation()
+  const [searchParams] = useSearchParams()
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [availability, setAvailability] = useState<Record<string, { availableRooms: number; available: boolean }>>({})
+  const roomImages = useGalleryImages('rooms')
+  const checkIn = searchParams.get('checkIn')
+  const checkOut = searchParams.get('checkOut')
+  const requestedRooms = searchParams.get('rooms')
+  const english = i18n.resolvedLanguage?.startsWith('en')
 
-  const toggleAccordion = (id: string) => {
-    setOpenId(openId === id ? null : id)
+  /**
+   * Vue et literie, dans l'ordre : ce qui est saisi au back-office, sinon la
+   * traduction livrée pour les quatre chambres d'origine, sinon un tiret.
+   *
+   * Le dernier repli n'est pas décoratif : `t()` renvoie la clé elle-même
+   * quand elle n'existe pas. Sans lui, une chambre créée au back-office
+   * affichait « roomsData.<clé>.view » au visiteur.
+   */
+  const detail = (room: Room, field: 'view' | 'bedType') => {
+    const saved = english ? room[`${field}En` as const] : room[field]
+    if (saved) return saved
+    return t(`roomsData.${room.translationKey}.${field}`, { defaultValue: '' }) || '—'
+  }
+
+  useEffect(() => {
+    async function fetchRooms() {
+      const response = await api.getRooms()
+      if (response.error) {
+        setError(response.error)
+      } else if (response.data) {
+        setRooms(response.data)
+      }
+      setLoading(false)
+    }
+    fetchRooms()
+  }, [])
+
+  /**
+   * Un seul appel pour toutes les chambres : le calendrier renvoie les unités
+   * libres par nuit, et la disponibilité d'un séjour est celle de sa pire nuit.
+   * On interrogeait auparavant l'API une fois par chambre.
+   */
+  useEffect(() => {
+    if (!checkIn || !checkOut) {
+      setAvailability({})
+      return
+    }
+
+    const startDate = checkIn
+    const endDate = checkOut
+    let active = true
+    const requestedCount = Number(requestedRooms)
+    const roomCount = Number.isFinite(requestedCount) && requestedCount > 0 ? requestedCount : 1
+
+    async function fetchAvailability() {
+      const response = await api.getAvailabilityCalendar(startDate, endDate)
+      if (!active || response.error || !response.data) return
+
+      const next: Record<string, { availableRooms: number; available: boolean }> = {}
+      for (const room of response.data) {
+        const free = room.days.length === 0 ? 0 : Math.min(...room.days.map((day) => day.free))
+        // Les cartes sont identifiées par le slug : c'est ce que l'API publique
+        // expose comme `id` d'une chambre.
+        next[room.slug] = { availableRooms: free, available: free >= roomCount }
+      }
+      setAvailability(next)
+    }
+
+    fetchAvailability()
+    return () => {
+      active = false
+    }
+  }, [checkIn, checkOut, requestedRooms])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading rooms...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load rooms: {error}</p>
+          <button onClick={() => window.location.reload()} className="btn-gold">
+            Retry
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="bg-white">
-      {/* 1. Hero Section matching Screenshot 2 avec photo officielle */}
-      <HeroBanner
-        image="/images/imageOrigine/Photo-Chambres-et-Suites-1200.jpg"
-        stars={3}
-        eyebrow="CHAMBRE ET SUITE"
-        title="Votre parenthèse"
-        titleItalic="confort"
-        buttonText="RÉSERVEZ"
-        buttonLink="/contact#booking"
-      />
+    <>
+      <PageHero image="/images/rooms/room-3.jpg" title={t('rooms.heroTitle')} subtitle={t('rooms.heroSubtitle')} />
 
-      {/* 2. Introduction Section (White Background) */}
-      <section className="py-20 md:py-28 px-6 max-w-4xl mx-auto text-center">
-        <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-charcoal tracking-wide mb-8">
-          Découvrez Antsirabe <span className="italic font-normal">autrement</span>
-        </h2>
-        <div className="space-y-4 text-xs sm:text-sm md:text-base text-gray-500 max-w-2xl mx-auto leading-relaxed font-light">
-          <p>
-            Notre hôtel vous ouvre ses portes pour une expérience unique alliant sérénité et convivialité.
-            Un lieu idéal pour se détendre, profiter d’un sommeil réparateur et savourer des instants de calme.
-          </p>
-          <p>
-            Que vous soyez en voyage d’affaires ou d’agrément, nous vous promettons un séjour ressourçant.
-          </p>
-        </div>
-      </section>
+      {/* Intro */}
+      <AnimatedSection className="container-luxe py-20 md:py-24">
+        <SectionHeading eyebrow={t('common.ourStory')} title={t('rooms.introTitle')} text={t('rooms.introText')} />
+      </AnimatedSection>
 
-      {/* 3. Nos Hébergements Accordion Section */}
-      <section className="bg-[#FAF3EA] py-20 md:py-28 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="font-serif italic text-3xl md:text-4xl text-center text-charcoal mb-14 font-normal">
-            Nos Hébergements
-          </h2>
-
-          <div className="divide-y divide-charcoal/15 border-t border-b border-charcoal/15">
-            {accommodations.map((item) => {
-              const isOpen = openId === item.id
-              return (
-                <div key={item.id} className="transition-all duration-300">
-                  <button
-                    type="button"
-                    onClick={() => toggleAccordion(item.id)}
-                    className="w-full py-6 md:py-8 flex items-center justify-between text-left group transition-colors"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-6">
-                      <span className="font-serif text-xl sm:text-2xl text-charcoal group-hover:text-gold-700 transition-colors">
-                        {item.title}
-                      </span>
-                      <span className="text-[11px] sm:text-xs text-charcoal/60 tracking-wider font-light uppercase">
-                        {item.specs}
-                      </span>
-                    </div>
-
-                    <div className="w-8 h-8 rounded-full border border-charcoal/30 flex items-center justify-center shrink-0 ml-4 group-hover:border-charcoal group-hover:bg-charcoal group-hover:text-white transition-all">
-                      {isOpen ? (
-                        <Minus size={16} className="text-charcoal group-hover:text-white" />
-                      ) : (
-                        <Plus size={16} className="text-charcoal group-hover:text-white" />
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Expandable details */}
-                  {isOpen && (
-                    <div className="pb-8 pt-2 animate-fade-in">
-                      <div className="bg-white/70 backdrop-blur-sm rounded-xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center border border-charcoal/5 shadow-sm">
-                        <div className="aspect-[4/3] rounded-lg overflow-hidden shadow-sm">
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="space-y-4">
-                          <p className="text-sm text-charcoal/80 leading-relaxed font-light">
-                            {item.description}
-                          </p>
-                          <div className="text-xs text-gold-700 font-medium">
-                            {item.price}
-                          </div>
-                          <div className="space-y-2 pt-2">
-                            {item.amenities.map((amenity, idx) => (
-                              <div key={idx} className="flex items-center gap-2 text-xs text-charcoal/70">
-                                <Check size={14} className="text-gold-600 shrink-0" />
-                                <span>{amenity}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="pt-4">
-                            <Link
-                              to={`/contact?room=${item.id}#booking`}
-                              className="inline-flex items-center gap-2 bg-charcoal hover:bg-black text-white text-xs uppercase tracking-widest px-6 py-3 rounded-full transition-all"
-                            >
-                              <span>Réserver cette chambre</span>
-                              <ArrowRight size={14} />
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+      {/* Amenities */}
+      <section className="bg-cream py-16">
+        <div className="container-luxe">
+          <h3 className="font-serif text-2xl text-center mb-10">{t('rooms.amenitiesTitle')}</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            {(t('rooms.amenities', { returnObjects: true }) as string[]).map((item) => (
+              <div key={item} className="flex items-center gap-2 text-sm text-charcoal">
+                <Check size={16} className="text-gold-500 shrink-0" />
+                {item}
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* 4. Pre-footer CTA banner */}
-      <CtaBanner />
-    </div>
+      {/* Room cards grid */}
+      <AnimatedSection className="container-luxe py-20 md:py-24">
+        <SectionHeading title={t('rooms.compareTitle')} text={t('rooms.compareText')} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-14">
+          {rooms.map((room, idx) => (
+            <AnimatedSection key={room.id} delay={idx * 0.08}>
+              <RoomCard room={room} featured={room.id === 'suite'} availability={availability[room.slug]} />
+            </AnimatedSection>
+          ))}
+        </div>
+      </AnimatedSection>
+
+      {/* Comparison table (desktop) */}
+      <section className="container-luxe pb-20 hidden lg:block">
+        <div className="overflow-x-auto border border-gray-200 rounded-md">
+          <table className="w-full text-sm">
+            <thead className="bg-charcoal text-white">
+              <tr>
+                <th className="text-left px-6 py-4 font-serif text-base">&nbsp;</th>
+                {rooms.map((r) => (
+                  <th key={r.id} className="text-left px-6 py-4 font-serif text-base">
+                    {(english ? r.nameEn : r.name) || t(`roomsData.${r.translationKey}.name`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              <tr>
+                <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.size')}</td>
+                {rooms.map((r) => (
+                  <td key={r.id} className="px-6 py-4">{r.size} m²</td>
+                ))}
+              </tr>
+              <tr className="bg-cream/50">
+                <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.guests')}</td>
+                {rooms.map((r) => (
+                  <td key={r.id} className="px-6 py-4">{r.maxGuests}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.view')}</td>
+                {rooms.map((r) => (
+                  <td key={r.id} className="px-6 py-4">{detail(r, 'view')}</td>
+                ))}
+              </tr>
+              <tr className="bg-cream/50">
+                <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.bedType')}</td>
+                {rooms.map((r) => (
+                  <td key={r.id} className="px-6 py-4">{detail(r, 'bedType')}</td>
+                ))}
+              </tr>
+              <tr>
+                <td className="px-6 py-4 font-medium text-gray-500">{t('common.from')}</td>
+                {rooms.map((r) => (
+                  <td key={r.id} className="px-6 py-4 text-gold-600 font-serif text-lg">
+                    {formatCurrency(r.price)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section className="bg-cream py-20 md:py-24">
+        <div className="container-luxe">
+          <SectionHeading eyebrow={t('home.galleryEyebrow')} title={t('rooms.heroTitle')} />
+          <div className="mt-14">
+            <ImageGallery images={roomImages} columns={4} />
+          </div>
+        </div>
+      </section>
+    </>
   )
 }
