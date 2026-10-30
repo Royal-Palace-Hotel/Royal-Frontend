@@ -2,11 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { Maximize, Users, BedDouble, Eye } from 'lucide-react'
 import type { Room } from '@/types'
-import { formatAriary } from '@/utils/helpers'
 import { resolveImageUrl } from '@/utils/api'
-
-// Taux de conversion EUR -> Ariary utilisé pour l'affichage (à ajuster si besoin)
-const EUR_TO_MGA = 5000
 
 interface RoomCardProps {
   room: Room
@@ -18,7 +14,7 @@ interface RoomCardProps {
  * RoomCard
  * --------
  * Displays a room's photo, name/description (via i18n roomsData.<translationKey>),
- * key facts (size, guests, view) and price, with a booking CTA.
+ * key facts (size, guests, view) with a booking CTA.
  */
 export default function RoomCard({ room, featured = false, availability }: RoomCardProps) {
   const { t, i18n } = useTranslation()
@@ -26,8 +22,6 @@ export default function RoomCard({ room, featured = false, availability }: RoomC
   const english = i18n.resolvedLanguage?.startsWith('en')
   const roomName = (english ? room.nameEn : room.name) || t(`${base}.name`)
   const roomDescription = (english ? room.descriptionEn : room.description) || t(`${base}.description`)
-  const priceAr = room.currency === 'MGA' ? room.price : room.price * EUR_TO_MGA
-
   return (
     <div className="group bg-white shadow-card rounded-md overflow-hidden flex flex-col h-full">
       {/* Image */}
@@ -68,27 +62,13 @@ export default function RoomCard({ room, featured = false, availability }: RoomC
           </span>
         </div>
 
-        {/* Prix */}
-        <div className="mb-4">
-          <span className="block text-[11px] uppercase tracking-widest2 text-gray-400 mb-1">
-            {t('common.from')}
-          </span>
-          <div className="flex items-baseline gap-x-2">
-            <span className="font-serif text-2xl text-gold-600 whitespace-nowrap">
-              {formatAriary(priceAr)}
-            </span>
-            <span className="text-xs text-gray-500 font-sans whitespace-nowrap">
-              {t('common.perNight')}
-            </span>
-          </div>
-          {availability && (
-            <p className={`mt-2 text-xs ${availability.available ? 'text-green-700' : 'text-red-600'}`}>
-              {availability.available
-                ? t('rooms.availabilityAvailable', { count: availability.availableRooms })
-                : t('rooms.availabilityUnavailable')}
-            </p>
-          )}
-        </div>
+        {availability && (
+          <p className={`mb-4 text-xs ${availability.available ? 'text-green-700' : 'text-red-600'}`}>
+            {availability.available
+              ? t('rooms.availabilityAvailable', { count: availability.availableRooms })
+              : t('rooms.availabilityUnavailable')}
+          </p>
+        )}
         
         {/* Bouton de réservation */}
         <Link

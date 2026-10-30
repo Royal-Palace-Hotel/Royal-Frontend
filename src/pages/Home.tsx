@@ -8,10 +8,10 @@ import ImageGallery from '@/components/ImageGallery'
 import { useGalleryImages } from '@/hooks/useGallery'
 
 const services = [
-  { key: 'service1', icon: BedDouble, image: '/images/rooms/room-2.jpg', link: '/chambres-suites' },
-  { key: 'service2', icon: UtensilsCrossed, image: '/images/restaurant/restaurant-1.jpg', link: '/restaurant' },
-  { key: 'service3', icon: Waves, image: '/images/pool/pool-1.jpg', link: '/piscine-bien-etre' },
-  { key: 'service4', icon: PartyPopper, image: '/images/events/events-1.jpg', link: '/reunions-evenements' },
+  { key: 'service1', icon: BedDouble, image: '/images/Photo-chambre.jpg', link: '/chambres-suites' },
+  { key: 'service2', icon: UtensilsCrossed, image: '/images/Photo-Bar-et-Restaurants-1200.jpg', link: '/restaurant' },
+  { key: 'service3', icon: Waves, image: '/images/Photo-Gallerie-2-1200.jpg', link: '/piscine-bien-etre' },
+  { key: 'service4', icon: PartyPopper, image: '/images/Photo-Evenements-1200.jpg', link: '/reunions-evenements' },
 ]
 
 const highlights = [
@@ -21,9 +21,9 @@ const highlights = [
 ]
 
 const sisterHotels = [
-  { key: 'sister1', image: '/images/gallery/lobby-1.jpg' },
-  { key: 'sister2', image: '/images/pool/pool-2.jpg' },
-  { key: 'sister3', image: '/images/pool/pool-3.jpg' },
+  { key: 'sister1', image: '/images/Photo-Gallerie-1-1200.jpg' },
+  { key: 'sister2', image: '/images/Photo-Gallerie-2-1200.jpg' },
+  { key: 'sister3', image: '/images/Photo-Gallerie-5-1200.jpg' },
 ]
 
 export default function Home() {
@@ -143,7 +143,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="relative py-24 overflow-hidden">
-        <img src="/images/pool/pool-1.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <img src="/images/Photo-Gallerie-2-1200.jpg" alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-black/55" />
         <div className="relative z-10 container-luxe text-center">
           <h2 className="font-serif text-3xl md:text-4xl text-white mb-4">{t('home.ctaTitle')}</h2>

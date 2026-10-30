@@ -49,7 +49,7 @@ export default function Discover() {
 
   return (
     <>
-      <PageHero image="/images/discover/antsirabe-2.jpg" title={t('discover.heroTitle')} subtitle={t('discover.heroSubtitle')} />
+      <PageHero image="/images/670496995_940570388720315_2813213826706496651_n%20(1).jpg" title={t('discover.heroTitle')} subtitle={t('discover.heroSubtitle')} />
 
       <AnimatedSection className="container-luxe py-20 md:py-24">
         <SectionHeading title={t('discover.introTitle')} text={t('discover.introText')} />

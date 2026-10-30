@@ -60,7 +60,7 @@ export default function Restaurant() {
 
   return (
     <>
-      <PageHero image="/images/restaurant/restaurant-1.jpg" title={t('restaurant.heroTitle')} subtitle={t('restaurant.heroSubtitle')} />
+      <PageHero image="/images/Photo-Bar-et-Restaurants-1200.jpg" title={t('restaurant.heroTitle')} subtitle={t('restaurant.heroSubtitle')} />
 
       {/* Section intro */}
       <AnimatedSection className="container-luxe py-20 md:py-24">
@@ -75,9 +75,9 @@ export default function Restaurant() {
       <section className="bg-cream py-20 md:py-24">
         <div className="container-luxe grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { titleKey: 'warmTableTitle', textKey: 'warmTableText', img: '/images/restaurant/restaurant-2.jpg' },
-            { titleKey: 'dishesTitle', textKey: 'dishesText', img: '/images/restaurant/food-1.jpg' },
-            { titleKey: 'barTitle', textKey: 'barText', img: '/images/restaurant/breakfast-1.jpg' },
+            { titleKey: 'warmTableTitle', textKey: 'warmTableText', img: '/images/restaurant/terrace-real.jpg' },
+            { titleKey: 'dishesTitle', textKey: 'dishesText', img: '/images/restaurant/dish-real.jpg' },
+            { titleKey: 'barTitle', textKey: 'barText', img: '/images/restaurant/cocktails-real.jpg' },
           ].map((item, idx) => (
             <AnimatedSection key={item.titleKey} delay={idx * 0.1} className="bg-white rounded-md overflow-hidden shadow-card">
               <div className="aspect-[4/3] overflow-hidden">
@@ -130,6 +130,16 @@ export default function Restaurant() {
       <section className="bg-cream py-20 md:py-24">
         <div className="container-luxe">
           <SectionHeading title={t('restaurant.menuTitle')} text={t('restaurant.menuText')} />
+
+          <div className="mt-14 max-w-5xl mx-auto overflow-hidden rounded-md shadow-card bg-white">
+            <img
+              src="/images/restaurant/menu-snack-hd.png"
+              alt={t('restaurant.menuTitle')}
+              className="w-full h-auto"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
 
           <div className="mt-14 max-w-4xl mx-auto space-y-12">
             {menuSections.length > 0 ? menuSections.map((section) => (
