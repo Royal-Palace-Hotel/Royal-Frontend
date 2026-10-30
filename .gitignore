@@ -29,5 +29,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Originaux des images, avant recompression pour le web. Gardés sur disque pour
+# pouvoir refaire une passe depuis la source, trop lourds pour le dépôt.
+images-source/
+
 # misc
 .DS_Store

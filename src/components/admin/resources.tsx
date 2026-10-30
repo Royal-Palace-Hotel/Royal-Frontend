@@ -30,6 +30,16 @@ export const resources: Record<string, ResourceSpec> = {
       { key: 'nameEn', label: 'Nom (EN)', translateFrom: 'name' },
       { key: 'description', label: 'Description (FR)', type: 'textarea' },
       { key: 'descriptionEn', label: 'Description (EN)', type: 'textarea', translateFrom: 'description' },
+      {
+        key: 'view', label: 'Vue (FR)', optional: true, nullWhenEmpty: true,
+        help: 'Reprise dans le tableau comparatif du site, ex. « Vue jardin ».',
+      },
+      { key: 'viewEn', label: 'Vue (EN)', optional: true, nullWhenEmpty: true, translateFrom: 'view' },
+      {
+        key: 'bedType', label: 'Literie (FR)', optional: true, nullWhenEmpty: true,
+        help: 'ex. « Lit king size » ou « Lit double ou lits jumeaux ».',
+      },
+      { key: 'bedTypeEn', label: 'Literie (EN)', optional: true, nullWhenEmpty: true, translateFrom: 'bedType' },
       { key: 'price', label: 'Prix par nuit', type: 'number' },
       { key: 'currency', label: 'Devise' },
       { key: 'size', label: 'Superficie (m²)', type: 'number' },

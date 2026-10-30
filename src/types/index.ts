@@ -10,6 +10,10 @@ export interface Room {
   nameEn?: string | null
   description?: string | null
   descriptionEn?: string | null
+  view?: string | null
+  viewEn?: string | null
+  bedType?: string | null
+  bedTypeEn?: string | null
   price: number // in EUR per night (base price)
   currency: string
   images: string[] // paths under /images/rooms/

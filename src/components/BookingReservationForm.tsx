@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { AlertCircle, CheckCircle } from 'lucide-react'
 import { useBooking } from '@/hooks/useBooking'
 import { api } from '@/utils/api'
 import { formatDate, nightsBetween, toInputDate } from '@/utils/dateHelpers'
-import { validateEmail, validatePhone } from '@/utils/helpers'
+import { formatCurrency, validateEmail, validatePhone } from '@/utils/helpers'
+import type { Room } from '@/types'
 
 type Status = 'idle' | 'sending' | 'success' | 'error'
 type ReservationFormData = { name: string; email: string; phone: string }
@@ -19,6 +20,17 @@ export default function BookingReservationForm() {
   const [errors, setErrors] = useState<ReservationFormErrors>({})
   const [form, setForm] = useState<ReservationFormData>({ name: '', email: '', phone: '' })
   const [reason, setReason] = useState('')
+  const [rooms, setRooms] = useState<Room[]>([])
+
+  // Les tarifs servent à chiffrer le séjour avant l'envoi. Sans cet appel, le
+  // visiteur remplissait ses coordonnées sans jamais voir de montant.
+  useEffect(() => {
+    let active = true
+    api.getRooms().then((response) => {
+      if (active && response.data) setRooms(response.data)
+    })
+    return () => { active = false }
+  }, [])
 
   function update<K extends keyof ReservationFormData>(key: K, value: string) {
     setForm((previous) => ({ ...previous, [key]: value }))
@@ -82,6 +94,7 @@ export default function BookingReservationForm() {
   }
 
   const language = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'fr'
+  const english = language === 'en'
   const nights = nightsBetween(state.checkIn, state.checkOut)
   const roomLabel = t(state.rooms > 1 ? 'common.rooms' : 'common.room')
   const adultLabel = t(state.adults > 1 ? 'common.adults' : 'common.adult')
@@ -92,6 +105,22 @@ export default function BookingReservationForm() {
     { checkIn: formatDate(state.checkIn, language), checkOut: formatDate(state.checkOut, language) }
   )}`
 
+  /*
+   * Chiffrage du séjour.
+   *
+   * Si une chambre est choisie, c'est son tarif. Sinon, c'est la moins chère
+   * pouvant accueillir le groupe — exactement la règle qu'applique le serveur
+   * au moment d'attribuer une chambre, pour que le montant annoncé soit celui
+   * qui sera facturé et non une approximation.
+   */
+  const guests = state.adults + state.children
+  const chosen = rooms.find((room) => room.id === searchParams.get('room'))
+  const cheapestFitting = [...rooms]
+    .filter((room) => room.maxGuests * state.rooms >= guests)
+    .sort((a, b) => a.price - b.price)[0]
+  const quotedRoom = chosen ?? cheapestFitting
+  const total = quotedRoom ? quotedRoom.price * nights * state.rooms : null
+
   const inputClass =
     'w-full border border-gray-300 focus:border-gold-500 focus:ring-1 focus:ring-gold-500/30 px-4 py-3 text-sm outline-none transition-colors bg-white'
 
@@ -101,6 +130,28 @@ export default function BookingReservationForm() {
         <h3 className="font-serif text-lg mb-1">{t('booking.guestDetails')}</h3>
         <p className="text-sm text-gray-500">{summary}</p>
       </div>
+
+      {quotedRoom && total !== null && (
+        <div className="border border-gold-200 bg-gold-50/60 px-5 py-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <span className="text-sm text-gray-700">
+              {chosen
+                ? ((english ? quotedRoom.nameEn : quotedRoom.name) || t(`roomsData.${quotedRoom.translationKey}.name`))
+                : t('booking.cheapestAvailable')}
+            </span>
+            <span className="font-serif text-xl text-gold-700">
+              {formatCurrency(total, quotedRoom.currency, language === 'en' ? 'en-GB' : 'fr-FR')}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            {t('booking.priceBreakdown', {
+              rate: formatCurrency(quotedRoom.price, quotedRoom.currency, language === 'en' ? 'en-GB' : 'fr-FR'),
+              nights: state.rooms * nights,
+            })}
+          </p>
+          <p className="mt-2 text-xs text-gray-500">{t('booking.priceNotice')}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>

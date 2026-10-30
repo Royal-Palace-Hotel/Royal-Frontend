@@ -312,6 +312,10 @@ const fr = {
     onlyLeft_one: 'Il ne reste qu’une chambre sur ces dates : réduisez le nombre de chambres ou changez de dates.',
     onlyLeft_other: 'Il ne reste que {{count}} chambres sur ces dates : réduisez le nombre de chambres ou changez de dates.',
     tooManyGuests: 'Cette chambre ne peut pas accueillir autant de voyageurs. Choisissez-en une plus grande ou ajoutez une chambre.',
+    // Chiffrage affiché avant l'envoi de la demande.
+    cheapestAvailable: 'Meilleur tarif disponible pour ce séjour',
+    priceBreakdown: '{{rate}} par nuit × {{nights}} nuitée(s)',
+    priceNotice: 'Montant estimé au tarif affiché. Il vous sera confirmé par e-mail avec votre réservation.',
   },
 }
 

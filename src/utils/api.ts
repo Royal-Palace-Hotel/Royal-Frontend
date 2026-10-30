@@ -65,6 +65,23 @@ export interface RoomAvailability {
   days: AvailabilityDay[]
 }
 
+/** Une réservation telle que la vue « journée » la présente. */
+export interface DayBooking {
+  id: string
+  guestName: string
+  guestEmail: string | null
+  guestPhone: string | null
+  roomName: string | null
+  rooms: number
+  adults: number
+  children: number
+  nights: number
+  checkIn: string
+  checkOut: string
+  status: string
+  source: string
+}
+
 export interface RoomBlock {
   id: string
   roomId: string
@@ -333,13 +350,22 @@ export const adminApi = {
   ),
   me: () => adminRequest<{ user: AdminUser }>('/auth/me'),
   get: <T>(endpoint: string) => adminRequest<T>(endpoint),
+  /** Arrivées, départs et clients sur place pour une date donnée. */
+  day: (date: string) => adminRequest<{
+    date: string
+    arrivals: DayBooking[]
+    departures: DayBooking[]
+    inHouse: DayBooking[]
+  }>(`/admin/day?date=${date}`),
+
   /** Tableau de disponibilité : calendrier détaillé + périodes bloquées de la fenêtre. */
-  availability: (from: string, to: string) => adminRequest<{
+  availability: (from: string, to: string, ignoreBooking?: string) => adminRequest<{
     from: string
     to: string
     rooms: RoomAvailability[]
     blocks: RoomBlock[]
-  }>(`/admin/availability?from=${from}&to=${to}`),
+  }>(`/admin/availability?from=${from}&to=${to}`
+    + (ignoreBooking ? `&ignoreBooking=${encodeURIComponent(ignoreBooking)}` : '')),
 
   /** La traduction FR → EN est facultative côté serveur : à demander avant de la proposer. */
   translationStatus: () => adminRequest<{ enabled: boolean }>('/admin/translate'),

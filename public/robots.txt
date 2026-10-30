@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Le back-office n'a rien à faire dans un index de moteur de recherche.
+Disallow: /admin
+Disallow: /admin/
+
+Sitemap: https://www.royalpalaceantsirabe.com/sitemap.xml

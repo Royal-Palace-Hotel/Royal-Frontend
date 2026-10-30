@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Download, Phone, Plus } from 'lucide-react'
 import { adminApi, downloadCsv, PageMeta, queryString } from '@/utils/api'
-import NewBookingDrawer from './NewBookingDrawer'
+import NewBookingDrawer, { type EditableBooking } from './NewBookingDrawer'
 import {
   BOOKING_STATUS, Button, Card, Drawer, EmptyState, ErrorBanner, Field, Notice, Pagination,
   SearchInput, Select, Spinner, StatusBadge, Toolbar,
@@ -56,6 +56,7 @@ export default function BookingsPanel() {
   const [page, setPage] = useState(1)
   const [detail, setDetail] = useState<any>(null)
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<EditableBooking | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -196,9 +197,22 @@ export default function BookingsPanel() {
       {creating && (
         <NewBookingDrawer
           onClose={() => setCreating(false)}
-          onCreated={(guestName) => {
+          onSaved={(guestName) => {
             setCreating(false)
             setNotice(`Réservation enregistrée pour ${guestName}.`)
+            void load()
+          }}
+        />
+      )}
+
+      {editing && (
+        <NewBookingDrawer
+          booking={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(guestName) => {
+            setEditing(null)
+            setDetail(null)
+            setNotice(`Réservation de ${guestName} mise à jour.`)
             void load()
           }}
         />
@@ -208,6 +222,7 @@ export default function BookingsPanel() {
         <Drawer title="Détail de la réservation" onClose={() => setDetail(null)} footer={
           <div className="flex flex-wrap gap-2">
             <Button variant="gold" onClick={() => void setStatusOf(detail.id, 'confirmed')}>Confirmer</Button>
+            <Button onClick={() => setEditing(detail as EditableBooking)}>Modifier</Button>
             <Button onClick={() => void setStatusOf(detail.id, 'pending')}>Remettre en attente</Button>
             <Button variant="danger" onClick={() => void setStatusOf(detail.id, 'cancelled')}>Annuler</Button>
           </div>

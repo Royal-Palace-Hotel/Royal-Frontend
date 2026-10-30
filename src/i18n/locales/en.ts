@@ -312,6 +312,10 @@ const en = {
     onlyLeft_one: 'Only one room is left for these dates — book fewer rooms or pick other dates.',
     onlyLeft_other: 'Only {{count}} rooms are left for these dates — book fewer rooms or pick other dates.',
     tooManyGuests: 'This room cannot host that many guests. Pick a larger one or add a room.',
+    // Quote shown before the request is sent.
+    cheapestAvailable: 'Best available rate for this stay',
+    priceBreakdown: '{{rate}} per night × {{nights}} room-night(s)',
+    priceNotice: 'Estimated at the listed rate. It will be confirmed by email with your booking.',
   },
 }
 
