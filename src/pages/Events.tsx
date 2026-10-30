@@ -121,7 +121,7 @@ export default function Events() {
 
   return (
     <>
-      <PageHero image="/images/events/events-2.jpg" title={t('events.heroTitle')} subtitle={t('events.heroSubtitle')} />
+      <PageHero image="/images/Photo-Evenements-1200.jpg" title={t('events.heroTitle')} subtitle={t('events.heroSubtitle')} />
 
       <AnimatedSection className="container-luxe py-20 md:py-24">
         <SectionHeading title={t('events.introTitle')} text={t('events.introText')} />

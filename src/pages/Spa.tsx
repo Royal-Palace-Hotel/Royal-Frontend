@@ -76,7 +76,7 @@ export default function Spa() {
 
   return (
     <>
-      <PageHero image="/images/pool/pool-1.jpg" title={t('spa.heroTitle')} subtitle={t('spa.heroSubtitle')} />
+      <PageHero image="/images/Photo-Bien-etre-1200.jpg" title={t('spa.heroTitle')} subtitle={t('spa.heroSubtitle')} />
 
       {/* Pool section */}
       <AnimatedSection className="container-luxe py-20 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -89,8 +89,8 @@ export default function Spa() {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <img src="/images/pool/pool-1.jpg" alt="Piscine" className="rounded-md aspect-square object-cover" loading="lazy" />
-          <img src="/images/pool/pool-2.jpg" alt="Piscine et jardin" className="rounded-md aspect-square object-cover mt-8" loading="lazy" />
+          <img src="/images/Photo-Spa-et-Detente-2.jpg" alt="Piscine" className="rounded-md aspect-square object-cover" loading="lazy" />
+          <img src="/images/Photo-Gallerie-2-1200.jpg" alt="Piscine et jardin" className="rounded-md aspect-square object-cover mt-8" loading="lazy" />
         </div>
       </AnimatedSection>
 
@@ -98,8 +98,8 @@ export default function Spa() {
       <section className="bg-cream py-20 md:py-24">
         <div className="container-luxe grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="order-2 lg:order-1 grid grid-cols-2 gap-4">
-            <img src="/images/spa/spa-1.jpg" alt="Spa" className="rounded-md aspect-square object-cover" loading="lazy" />
-            <img src="/images/spa/spa-2.jpg" alt="Ambiance spa" className="rounded-md aspect-square object-cover mt-8" loading="lazy" />
+            <img src="/images/Photo-Gallerie-3-1200.jpg" alt="Spa" className="rounded-md aspect-square object-cover" loading="lazy" />
+            <img src="/images/Photo-Gallerie-4-1200.jpg" alt="Ambiance spa" className="rounded-md aspect-square object-cover mt-8" loading="lazy" />
           </div>
           <div className="order-1 lg:order-2">
             <div className="section-eyebrow">{t('spa.spaEyebrow')}</div>

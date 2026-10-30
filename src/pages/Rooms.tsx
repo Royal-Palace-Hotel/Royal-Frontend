@@ -9,7 +9,6 @@ import RoomCard from '@/components/RoomCard'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
 import { useGalleryImages } from '@/hooks/useGallery'
-import { formatCurrency } from '@/utils/helpers'
 import type { Room } from '@/types'
 
 export default function Rooms() {
@@ -115,7 +114,7 @@ export default function Rooms() {
 
   return (
     <>
-      <PageHero image="/images/rooms/room-3.jpg" title={t('rooms.heroTitle')} subtitle={t('rooms.heroSubtitle')} />
+      <PageHero image="/images/Photo-chambre.jpg" title={t('rooms.heroTitle')} subtitle={t('rooms.heroSubtitle')} />
 
       {/* Intro */}
       <AnimatedSection className="container-luxe py-20 md:py-24">
@@ -186,14 +185,6 @@ export default function Rooms() {
                 <td className="px-6 py-4 font-medium text-gray-500">{t('rooms.bedType')}</td>
                 {rooms.map((r) => (
                   <td key={r.id} className="px-6 py-4">{detail(r, 'bedType')}</td>
-                ))}
-              </tr>
-              <tr>
-                <td className="px-6 py-4 font-medium text-gray-500">{t('common.from')}</td>
-                {rooms.map((r) => (
-                  <td key={r.id} className="px-6 py-4 text-gold-600 font-serif text-lg">
-                    {formatCurrency(r.price)}
-                  </td>
                 ))}
               </tr>
             </tbody>
