@@ -8,7 +8,6 @@ import SectionHeading from '@/components/SectionHeading'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
 import { useGalleryImages } from '@/hooks/useGallery'
-import { formatAriary } from '@/utils/helpers'
 import type { SpaTreatment } from '@/types'
 
 export default function Spa() {
@@ -117,7 +116,7 @@ export default function Spa() {
         <SectionHeading title={t('spa.treatmentsTitle')} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-14 max-w-4xl mx-auto">
           {spaTreatments.length > 0 ? spaTreatments.map((tr) => (
-            <div key={tr.id} className="flex justify-between items-center border border-gray-200 rounded-md p-5 hover:border-gold-500 transition-colors">
+            <div key={tr.id} className="border border-gray-200 rounded-md p-5 hover:border-gold-500 transition-colors">
               <div>
                 <div className="font-medium text-charcoal">{treatmentName(tr)}</div>
                 <div className="text-xs text-gray-500 mt-1">{treatmentDuration(tr)}</div>
@@ -125,12 +124,9 @@ export default function Spa() {
                   <p className="mt-2 max-w-sm text-xs text-gray-500">{description(tr)}</p>
                 )}
               </div>
-              <div className="text-right">
-                <div className="text-gold-600 font-serif text-lg">{formatAriary(tr.price)}</div>
-                <Link to="/contact#booking" className="text-xs text-gold-600 hover:text-gold-700 underline">
-                  {t('spa.bookTreatment')}
-                </Link>
-              </div>
+              <Link to="/contact#booking" className="mt-4 inline-block text-xs text-gold-600 hover:text-gold-700 underline">
+                {t('spa.bookTreatment')}
+              </Link>
             </div>
           )) : (
             <p className="text-center text-gray-600 col-span-2">Spa treatments not available at the moment.</p>

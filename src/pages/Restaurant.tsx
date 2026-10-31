@@ -7,7 +7,6 @@ import SectionHeading from '@/components/SectionHeading'
 import ImageGallery from '@/components/ImageGallery'
 import { api } from '@/utils/api'
 import { useGalleryImages } from '@/hooks/useGallery'
-import { formatAriary } from '@/utils/helpers'
 import { useLanguage } from '@/hooks/useLanguage'
 import type { MenuSection } from '@/types'
 
@@ -149,12 +148,11 @@ export default function Restaurant() {
                 </h3>
                 <div className="space-y-4">
                   {section.items.map((item) => (
-                    <div key={item.id} className="flex justify-between gap-4 border-b border-gray-200 pb-3">
+                    <div key={item.id} className="border-b border-gray-200 pb-3">
                       <div>
                         <div className="font-medium text-charcoal">{lang === 'en' ? item.nameEn : item.name}</div>
                         <div className="text-sm text-gray-500">{lang === 'en' ? item.descriptionEn : item.description}</div>
                       </div>
-                      <div className="text-gold-600 font-serif whitespace-nowrap">{formatAriary(item.price)}</div>
                     </div>
                   ))}
                 </div>
