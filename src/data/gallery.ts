@@ -22,10 +22,6 @@ export const galleryImages: GalleryImage[] = [
   { id: 'restaurant-4', src: '/images/Photo-nourriture-1.webp', alt: 'Création culinaire du restaurant', category: 'restaurant' },
   { id: 'restaurant-5', src: '/images/Photo-restaurant-1.webp', alt: 'Ambiance du restaurant Royal Palace', category: 'restaurant' },
 
-  { id: 'pool-1', src: '/images/Photo-Gallerie-2-1200.jpg', alt: 'Piscine entourée de palmiers', category: 'pool' },
-  { id: 'pool-2', src: '/images/pool/pool-2.jpg', alt: 'Piscine et jardin tropical', category: 'pool' },
-  { id: 'pool-3', src: '/images/pool/pool-3.jpg', alt: 'Espace détente au bord de la piscine', category: 'pool' },
-
   { id: 'spa-1', src: '/images/Photo-Gallerie-3-1200.jpg', alt: 'Cabine de soin du spa', category: 'spa' },
   { id: 'spa-2', src: '/images/spa/spa-2.jpg', alt: 'Ambiance zen du spa', category: 'spa' },
   { id: 'spa-3', src: '/images/spa/spa-3.jpg', alt: 'Salle de massage apaisante', category: 'spa' },
