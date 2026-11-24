@@ -138,8 +138,8 @@ export default function Spa() {
       <section className="bg-cream py-20 md:py-24">
         <div className="container-luxe">
           <SectionHeading eyebrow={t('home.galleryEyebrow')} title={t('spa.heroTitle')} />
-          <div className="mt-14">
-            <ImageGallery images={[...poolImages, ...spaImages]} columns={4} />
+          <div className="mt-14 max-w-4xl mx-auto">
+            <ImageGallery images={[...poolImages, ...spaImages]} columns={3} />
           </div>
         </div>
       </section>
