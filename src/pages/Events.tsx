@@ -1,20 +1,17 @@
 import { useTranslation } from 'react-i18next'
-import { Users, CheckCircle2, AlertCircle } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
 import PageHero from '@/components/PageHero'
 import AnimatedSection from '@/components/AnimatedSection'
 import SectionHeading from '@/components/SectionHeading'
 import { equipmentKeys } from '@/data/events'
-import type { EventFormData, EventRoom } from '@/types'
+import type { EventFormData } from '@/types'
 import { validateEmail } from '@/utils/helpers'
-import { api, resolveImageUrl } from '@/utils/api'
+import { api } from '@/utils/api'
 
 export default function Events() {
   const { t, i18n } = useTranslation()
   const [status, setStatus] = useState<'idle' | 'sending' | 'success'>('idle')
-  const [eventRooms, setEventRooms] = useState<EventRoom[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [form, setForm] = useState<EventFormData>({
     name: '',
@@ -26,43 +23,6 @@ export default function Events() {
     guestCount: '',
   })
   const english = i18n.resolvedLanguage?.startsWith('en')
-
-  useEffect(() => {
-    async function fetchEventRooms() {
-      const response = await api.getEvents()
-      if (response.error) {
-        setError(response.error)
-      } else if (response.data) {
-        setEventRooms(response.data)
-      }
-      setLoading(false)
-    }
-    fetchEventRooms()
-  }, [])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading event rooms...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Failed to load event rooms: {error}</p>
-          <button onClick={() => window.location.reload()} className="btn-gold">
-            Retry
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   function update<K extends keyof EventFormData>(key: K, value: string) {
     setForm((p) => ({ ...p, [key]: value }))
@@ -127,7 +87,7 @@ export default function Events() {
         <SectionHeading title={t('events.introTitle')} text={t('events.introText')} />
       </AnimatedSection>
 
-      {/* Rooms with capacity */}
+      {/*
       <section className="bg-cream py-20 md:py-24">
         <div className="container-luxe">
           <SectionHeading title={t('events.roomsTitle')} />
@@ -153,6 +113,7 @@ export default function Events() {
           </div>
         </div>
       </section>
+      */}
 
       {/* Equipment */}
       <AnimatedSection className="container-luxe py-20 md:py-24">
