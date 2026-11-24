@@ -28,7 +28,7 @@ export const rooms: Room[] = [
     translationKey: 'superior',
     price: 95,
     currency: 'EUR',
-    images: ['/images/Photo-Bloc-1.webp'],
+    images: ['/images/Photo-Bloc-1.jpg'],
     size: 28,
     maxGuests: 3,
     amenities: ['ac', 'wifi', 'tv', 'minibar', 'safe', 'bathroom'],
