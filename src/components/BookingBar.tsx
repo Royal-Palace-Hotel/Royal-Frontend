@@ -69,7 +69,7 @@ export default function BookingBar({ floating = true }: BookingBarProps) {
           // Bordures pointues (rounded-none) et largeur réduite
           'bg-white flex flex-col md:flex-row items-stretch w-full max-w-5xl rounded-none',
           floating
-            ? 'shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_25px_60px_-8px_rgba(0,0,0,0.45),0_-6px_25px_-10px_rgba(0,0,0,0.2)]'
+            ? 'shadow-none md:shadow-[0_0_0_1px_rgba(0,0,0,0.03),0_25px_60px_-8px_rgba(0,0,0,0.45),0_-6px_25px_-10px_rgba(0,0,0,0.2)]'
             : 'shadow-card'
         )}
       >

@@ -38,7 +38,7 @@ export default function Home() {
       <Hero />
 
       {/* Spacer for floating booking bar overlap */}
-      <div className="h-16 md:h-14" />
+      <div className="h-0 md:h-14" />
 
       {/* Introduction */}
       <AnimatedSection className="container-luxe py-20 md:py-28">
