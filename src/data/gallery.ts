@@ -12,7 +12,7 @@ export const galleryImages: GalleryImage[] = [
   { id: 'hero-1', src: '/images/Photo-Gallerie-1-1200.jpg', alt: 'Façade du Royal Palace Antsirabe', category: 'hero' },
 
   { id: 'room-1', src: '/images/Photo-chambre.jpg', alt: 'Chambre supérieure avec lit confortable', category: 'rooms' },
-  { id: 'room-2', src: '/images/Photo-Bloc-1.webp', alt: 'Chambre deluxe élégante', category: 'rooms' },
+  { id: 'room-2', src: '/images/Photo-Bloc-1.jpg', alt: 'Chambre deluxe élégante', category: 'rooms' },
   { id: 'room-3', src: '/images/Image-GYX72HV.jpg', alt: 'Suite royale avec décoration raffinée', category: 'rooms' },
   { id: 'room-4', src: '/images/Photo-Gallerie-5-1200.jpg', alt: 'Chambre classique lumineuse', category: 'rooms' },
 
