@@ -43,7 +43,7 @@ const fr = {
     introText:
       "Implanté au cœur de la ville d'Antsirabe, le long de la RN7 qui mène vers le Sud de Madagascar, le Royal Palace vous invite à découvrir son cadre exceptionnel et élégant, et vous offre le meilleur service pour rendre votre séjour inoubliable. La proximité de la ville, le restaurant où le plaisir culinaire se démarque, le magnifique jardin et sa piscine font du Royal Palace une destination de premier choix à Antsirabe.",
     servicesEyebrow: 'Nos services',
-    servicesTitle: 'Une expérience 5 étoiles à chaque instant',
+    servicesTitle: 'Une expérience 3 étoiles à chaque instant',
     service1Title: 'Chambres & Suites',
     service1Text: "Des espaces spacieux et raffinés, pensés pour votre confort absolu.",
     service2Title: 'Restaurant Gastronomique',
