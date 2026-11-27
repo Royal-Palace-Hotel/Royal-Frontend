@@ -22,12 +22,18 @@ export default function RoomCard({ room, featured = false, availability }: RoomC
   const english = i18n.resolvedLanguage?.startsWith('en')
   const roomName = (english ? room.nameEn : room.name) || t(`${base}.name`)
   const roomDescription = (english ? room.descriptionEn : room.description) || t(`${base}.description`)
+  const isDeluxeRoom =
+    room.translationKey === 'deluxe' ||
+    room.slug === 'chambre-de-luxe' ||
+    room.name?.trim().toLocaleLowerCase('fr-FR') === 'chambre de luxe'
+  const image = isDeluxeRoom ? '/images/12.png' : resolveImageUrl(room.images[0])
+
   return (
     <div className="group bg-white shadow-card rounded-md overflow-hidden flex flex-col h-full">
       {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
-          src={resolveImageUrl(room.images[0])}
+          src={image}
           alt={roomName}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           loading="lazy"
