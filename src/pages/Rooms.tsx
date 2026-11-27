@@ -114,7 +114,7 @@ export default function Rooms() {
 
   return (
     <>
-      <PageHero image="/images/Photo-titre.jpg" title={t('rooms.heroTitle')} subtitle={t('rooms.heroSubtitle')} />
+      <PageHero image="/images/6.jpg" title={t('rooms.heroTitle')} subtitle={t('rooms.heroSubtitle')} />
 
       {/* Intro */}
       <AnimatedSection className="container-luxe py-20 md:py-24">
